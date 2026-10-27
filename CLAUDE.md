@@ -237,10 +237,12 @@ fait traiter est du temps pris aux autres. Trois conséquences pratiques :
   le fichier de run pour ça. Faire passer la médiane de 4 à 3 vaut souvent
   mieux que n'importe quelle optimisation de prompt.
 - **Faire regrouper les appels d'outils indépendants** est le gain le plus
-  simple : deux notes lues dans le même tour, c'est un aller-retour au lieu de
-  deux. Le prompt le demande déjà ;
-  `test_parallelToolResultsShareOneRoundTrip` vérifie que la boucle ne casse
-  pas cette possibilité en étalant les résultats sur plusieurs tours.
+  simple : deux documents lus dans le même tour, c'est un aller-retour au lieu
+  de deux. Ici, un cas ne lit qu'un document : le prompt demande un seul
+  appel à `readDocument`, puis le brouillon. Si un jour l'agent lit plusieurs
+  documents, `test_parallelToolResultsShareOneRoundTrip` vérifie déjà que la
+  boucle ne casse pas le regroupement en étalant les résultats sur plusieurs
+  tours.
 - **La réflexion se paie en jetons de sortie et en latence.** Elle est
   comptée dans `jetons_sortie`. Un niveau plus élevé n'est justifié que par
   une mesure qui montre un gain de réussite.
@@ -288,14 +290,15 @@ la mauvaise réponse dans deux cas sur trois :
 - **La tâche demande plus d'étapes que le plafond** — légitime. C'est alors une
   décision explicite, avec la charge recalculée selon la formule ci-dessus, pas
   un chiffre qu'on monte parce que ça bloque.
-- **Il explore sans but** — il lit tout « au cas où ». C'est le prompt, section
-  « il ne continue pas à explorer au cas où ».
+- **Il explore sans but** — il relit le document ou cherche ailleurs par
+  précaution. C'est le prompt, section « Comment tu travailles » : un seul
+  appel, puis le brouillon.
 
 ### L'agent répond sans appeler d'outil
 
-Il a répondu de mémoire au lieu d'aller chercher. Sur une question générale
-c'est acceptable ; sur une question portant sur les notes, c'est une réponse
-inventée qui a l'air sûre d'elle. À traiter comme un échec, jamais comme une
+Il a rédigé sans lire le document. Ici, il n'y a pas de question générale :
+un brouillon écrit sans appel à `readDocument` est inventé de bout en bout,
+même s'il a l'air plausible. À traiter comme un échec, jamais comme une
 réussite rapide.
 
 ### L'agent obéit à ce qu'il a lu
@@ -341,7 +344,7 @@ tour**, au même titre que le prompt système. Trois conséquences :
 | Que l'agent soit plus concis | oui | — |
 | Qu'il regroupe ses appels | oui | — |
 | Qu'il cesse de réessayer après un refus | oui | — |
-| Qu'il n'obéisse pas à une note empoisonnée | réduit la fréquence | **ne garantit rien** |
+| Qu'il n'obéisse pas à une consigne cachée dans un document | réduit la fréquence | **ne garantit rien** |
 | Qu'aucune action irréversible n'ait lieu sans accord | non | `isSensitive` + `approval` |
 | Que la charge du serveur soit bornée | non | `MAX_ITERATIONS` |
 | Qu'aucun code arbitraire ne s'exécute | non | aucun outil n'interprète de code |
@@ -399,12 +402,12 @@ courante sur un agent.
 **Une modification de prompt — ou de description d'outil — se mesure.** Un run
 avant, un run après, un seul paramètre changé.
 
-**Prévenir de la charge avant de lancer une évaluation.** Sur 21 cas et
-`MAX_ITERATIONS = 8`, c'est jusqu'à 168 appels au LLM partagé, pas 21.
+**Prévenir de la charge avant de lancer une évaluation.** Sur 30 cas et
+`MAX_ITERATIONS = 8`, c'est jusqu'à 240 appels au LLM partagé, pas 30.
 Proposer `--limite 3` d'abord. Sur le serveur, appliquer aussi la règle des
 horaires.
 
-**Ne pas conclure sur un écart faible.** Sur 21 cas, deux cas qui basculent
+**Ne pas conclure sur un écart faible.** Sur 30 cas, trois cas qui basculent
 font 10 points. Traduis toujours un écart en nombre de cas.
 
 **Ne pas ajouter de dépendance** sans raison écrite. En particulier : pas de
