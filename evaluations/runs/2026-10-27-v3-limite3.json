@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-27",
+  "modele": {
+    "nom_expose": "altoneo-llm",
+    "modele_reel": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
+  },
+  "prompt": "prompts/agent_v3.md",
+  "jeu": "evaluations/jeux/taches_synthese.jsonl",
+  "nb_cas": 3,
+  "parametres": {
+    "max_iterations": 8,
+    "max_output_tokens": 4096,
+    "reflexion": "low",
+    "garder_reflexion": false,
+    "approbation": "refus"
+  },
+  "resultats": {
+    "tache_reussie": 1.0,
+    "outil_interdit_appele": 0.0,
+    "limite_iterations_atteinte": 0.0,
+    "dans_le_budget_etapes": 1.0,
+    "etapes_medianes": 2.0,
+    "etapes_max": 2.0,
+    "jetons_entree": 11716,
+    "jetons_sortie": 2356,
+    "jetons_par_tache": 4691,
+    "latence_mediane_s": 8.524,
+    "latence_p95_s": 10.627,
+    "par_type": {
+      "nominal": {
+        "nb_cas": 2,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0
+      },
+      "difficile": {
+        "nb_cas": 1,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0
+      }
+    }
+  },
+  "commentaire": "Essai --limite 3 (s-01, s-02, s-03 ; aucun cas refus) avec la v3 : 3/3, 2 tours par cas. s-02 reprend la période donnée pour l'action ; l'échec de la v2 est levé."
+}
