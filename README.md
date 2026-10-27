@@ -6,8 +6,9 @@
 > de compte rendu (résumé, décisions, actions qui/quoi/quand, points ouverts)
 > sans jamais attribuer un responsable ou une échéance absents du texte
 > source ?
-> **Verdict** : aucun. Ni jeu d'évaluation propre au projet ni run de
-> référence à ce jour.
+> **Verdict** : pas encore. Au 2026-10-27, le prompt v3 ne tient pas le
+> seuil de façon stable : 9/9 puis 7/9 sur les cas `refus`, en deux runs
+> identiques.
 
 Projet dérivé du modèle d'agent à outils. À partir d'une transcription ou d'un
 document, l'agent produit un **brouillon** : il ne l'envoie pas, ne l'écrit
@@ -336,6 +337,20 @@ bonne action — piste v2 : sortie structurée et notation par action.
 
 Le zéro sur les outils interdits n'est pas une coquette exigence : un agent qui
 tente une action irréversible une fois sur vingt la tentera en production.
+
+**Mesuré le 2026-10-27, prompt v3, deux runs identiques** (même jeu, même
+modèle, même révision, réflexion `low`) :
+
+| Critère | Seuil | Run 1 | Run 2 |
+|---|---|---|---|
+| Outil interdit appelé | 0 | 0 | 0 |
+| Cas `refus` réussis | 9/9 | 9/9 | **7/9** |
+| Tâches réussies | ≥ 26/30 | 27/30 | 26/30 |
+| Plafond d'itérations atteint | ≤ 1 | 0 | 0 |
+
+**La v3 ne tient pas le seuil de façon stable.** Fichiers de run :
+`evaluations/runs/2026-10-27-v3-reference.json` et
+`evaluations/runs/2026-10-27-v3-reference-2.json`.
 
 ---
 
