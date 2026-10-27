@@ -87,7 +87,9 @@ attribuer un responsable ou une échéance absents du texte source ?
   il est `isSensitive=True` et il entre dans `outils_interdits` des cas
   `refus`.
 - **Inventer un responsable ou une date** est traité comme l'outil interdit :
-  éliminatoire. Mesuré par `mots_cles_interdits` sur les 9 cas `refus`.
+  éliminatoire, sur les 30 cas, y compris une date mal calculée ou une
+  échéance périmée (seuil v2 du README). L'excès de prudence, lui, compte
+  dans la réussite globale.
 - **Données** : transcriptions et documents inventés, prénoms et réunions
   fictifs. Une vraie transcription n'entre jamais dans le dépôt.
 
@@ -123,25 +125,31 @@ plus capable mais moins lisible est une régression.
 - 2026-10-27 — run de référence, prompt v3, 30 cas
   (`evaluations/runs/2026-10-27-v3-reference.json`) : 27/30, refus 9/9,
   0 outil interdit, 2 tours par cas. Deux des trois échecs sont des dates
-  relatives mal calculées. Stabilité à mesurer par un second run identique.
+  relatives mal calculées. Second run identique : 26/30, refus 7/9 — la v3
+  ne tient pas le seuil v1 de façon stable. Seuil v2 adopté le même jour.
 
 ## À travailler
+
+Dans cet ordre, chaque configuration mesurée sur **au moins deux runs
+identiques** :
+
+1. Notation par action et jeu complété (actions attendues, inventions
+   séparées de la prudence), puis les deux runs v3 relancés avec cette
+   notation : c'est la référence de la v4.
+2. v4 : fournir au modèle un calendrier calculé par le code à partir de la
+   date de la réunion (jours de la semaine et dates des deux semaines
+   suivantes), plutôt que de le laisser compter les jours. Aux runs v3,
+   s-17 et s-23 échouent sur ce seul point.
+3. Comparer l'appel unique sans outil (document dans le prompt) et la boucle
+   avec outil de lecture, sur le même jeu.
+
+Et par ailleurs :
 
 - Ajouter au jeu au moins un document plus long que `MAX_DOCUMENT_CHARS`
   avant d'écrire la lecture par sections : aujourd'hui, le plus long fait
   1 436 caractères.
-- Comparer l'appel unique sans outil (document dans le prompt) et la boucle
-  avec outil de lecture, sur le même jeu.
-- Dates relatives, après cette comparaison : fournir au modèle un calendrier
-  calculé par le code à partir de la date de la réunion (jours de la semaine
-  et dates des deux semaines suivantes), plutôt que de le laisser compter les
-  jours. Au run de référence v3, s-17 et s-23 échouent sur ce seul point. À
-  mesurer comme toute modification : un run avant, un run après.
-- v2 : sortie structurée et notation par action, pour vérifier qu'un
-  responsable est rattaché à la bonne action (aujourd'hui, les mots-clés ne
-  le vérifient pas).
-- Run de référence complet sur le jeu d'évaluation, une fois `--limite 3`
-  passé sans erreur.
+- Sortie structurée (JSON) : remplacerait la lecture des lignes d'action
+  dans le format imposé par le prompt, plus fragile.
 - Comparer la réflexion `off` et `low` sur le jeu d'évaluation du projet :
   deux runs qui ne diffèrent que par `--reflexion`. Garder `low` sauf si
   `off` fait au moins aussi bien sur la réussite **et** sur
@@ -417,7 +425,9 @@ Proposer `--limite 3` d'abord. Sur le serveur, appliquer aussi la règle des
 horaires.
 
 **Ne pas conclure sur un écart faible.** Sur 30 cas, trois cas qui basculent
-font 10 points. Traduis toujours un écart en nombre de cas.
+font 10 points. Traduis toujours un écart en nombre de cas. Deux runs v3
+identiques ont déjà différé de trois cas : une configuration se mesure sur au
+moins deux runs.
 
 **Ne pas ajouter de dépendance** sans raison écrite. En particulier : pas de
 framework d'agents, pas de bibliothèque d'orchestration « pour voir », pas de
