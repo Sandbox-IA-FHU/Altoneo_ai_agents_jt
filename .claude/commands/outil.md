@@ -9,6 +9,12 @@ dangereuse.
 
 Outil demandé : $ARGUMENTS
 
+Aujourd'hui, l'agent n'a qu'un outil, `readDocument`, en lecture seule, et
+`test_toolboxIsReadOnly` le vérifie. Ajouter un outil change ce test, la
+surface d'attaque et le prompt : c'est une décision, pas une ligne de plus.
+Pour un brouillon de compte rendu, la réponse à « en a-t-on besoin ? » est
+souvent non — un envoi ou une diffusion reste le travail de l'organisateur.
+
 ## Avant d'écrire une ligne, réponds à trois questions
 
 **1. Cet outil est-il sensible ?** Il l'est s'il est irréversible, coûteux, ou
@@ -40,8 +46,11 @@ Si l'une des trois réponses coince, dis-le et arrête-toi là.
 3. Un schéma d'entrée strict : types explicites, `required` renseigné,
    description de chaque champ.
 4. **Aucun `eval`, aucun `exec`, aucun appel shell** construit à partir des
-   arguments. Si l'outil doit interpréter quelque chose, il l'analyse — voir
-   `evaluateExpression` pour le modèle à suivre.
+   arguments. Si l'outil doit interpréter quelque chose, il l'analyse avec
+   une grammaire explicite (par exemple `ast`, en n'autorisant qu'une liste
+   fermée de nœuds) — jamais en exécutant le texte.
+   `test_evalNeverEntersTheCode` cherche `eval(` et `exec(` dans `src/` et
+   `scripts/`.
 
 ## Les tests, dans le même passage
 
@@ -49,7 +58,11 @@ Si l'une des trois réponses coince, dis-le et arrête-toi là.
 - Un cas d'entrée invalide, qui doit lever `ToolError`.
 - Si l'outil est sensible : qu'il apparaît bien dans
   `registry.sensitiveNames()`, et un test de boucle qui prouve qu'il ne
-  s'exécute pas sous `DenyAll`.
+  s'exécute pas sous `DenyAll` — sur le modèle de `sendDraft`, l'outil
+  sensible fictif de `tests/conftest.py`, qui enregistre ce qu'il aurait
+  envoyé pour qu'on vérifie que rien n'est parti.
+- `test_toolboxIsReadOnly` mis à jour délibérément, avec la raison dans le
+  message de commit.
 - Si l'outil interprète une entrée : des cas hostiles, pas seulement des cas
   malformés.
 
@@ -57,7 +70,10 @@ Si l'une des trois réponses coince, dis-le et arrête-toi là.
 
 Deux cas au minimum : un où l'outil **doit** être appelé, un où il ne doit
 **pas** l'être. Sans le second, on ne mesure que la capacité, jamais la
-retenue.
+retenue. Un outil sensible entre dans `outils_interdits` de tous les cas
+`refus`, et dans celui de tout cas où un document cache une consigne qui
+pourrait le déclencher. Les cas s'ajoutent dans
+`scripts/generate_synthesis_set.py`, jamais à la main dans les fichiers JSONL.
 
 Rappelle enfin que l'ajout d'un outil change le prompt système envoyé à chaque
 tour : les runs passés ne sont plus strictement comparables, et il faut un

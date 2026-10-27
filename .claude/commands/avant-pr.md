@@ -43,13 +43,19 @@ ne fait échouer que la vie réelle.
 - Si `compose.yaml` a changé : `docker compose config -q` passe-t-il, le
   service reste-t-il préfixé par le projet, sans GPU ni port ?
 - Tout chiffre annoncé porte-t-il sa date et son nombre de cas ?
-- Si le prompt a changé : les deux runs existent-ils, avant et après ?
+- Si le prompt a changé : les deux runs existent-ils, avant et après ? Le
+  prompt reprend-il une expression, un prénom ou une date du jeu (vérifier
+  par grep) ? Les trois marqueurs sont-ils toujours écrits mot pour mot ?
+- Si le jeu d'évaluation a changé : l'a-t-on modifié par
+  `scripts/generate_synthesis_set.py`, et ses contrôles passent-ils ? Les
+  noms et entreprises sont-ils tous inventés ?
 - Si une conclusion est tirée : l'écart est-il assez grand pour être
   interprétable sur ce nombre de cas ?
 - Le plafond d'itérations est-il toujours en dur, et son atteinte toujours
   visible dans la trace ?
-- Un outil ajouté est-il correctement marqué `isSensitive` ? Un outil sensible
-  peut-il encore être atteint sans passer par la validation ?
+- L'agent est-il toujours en lecture seule (`test_toolboxIsReadOnly`) ? Si un
+  outil a été ajouté, est-il correctement marqué `isSensitive`, et un outil
+  sensible peut-il encore être atteint sans passer par la validation ?
 - Un `eval`, un `exec` ou un appel shell construit à partir d'arguments
   d'outil est-il apparu quelque part ?
 - Une dépendance a-t-elle été ajoutée ? Si oui, la raison est-elle écrite ?
