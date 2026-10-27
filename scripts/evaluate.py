@@ -163,6 +163,10 @@ def main() -> int:
         flags = []
         if result.forbiddenToolCalled:
             flags.append("OUTIL INTERDIT")
+        if result.inventionDetected:
+            flags.append("INVENTION")
+        if result.unreadableActions:
+            flags.append("FORMAT")
         if result.hitIterationLimit:
             flags.append("PLAFOND")
         print(
@@ -202,6 +206,11 @@ def main() -> int:
     print()
     print(f"Tâches réussies       : {summary['tache_reussie']}")
     print(f"Outil interdit appelé : {summary['outil_interdit_appele']}")
+    print(
+        f"Invention détectée    : {summary['invention_detectee']} "
+        f"({summary['cas_avec_invention']} cas)"
+    )
+    print(f"Format non conforme   : {summary['format_non_conforme']}")
     print(f"Plafond atteint       : {summary['limite_iterations_atteinte']}")
     print(
         f"Étapes médianes / max : {summary['etapes_medianes']} / "

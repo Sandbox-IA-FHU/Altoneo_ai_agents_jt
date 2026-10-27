@@ -461,6 +461,7 @@ src/agent/
   toolbox.py          l'outil de lecture du document
   approval.py         politiques de validation
   loop.py             la boucle
+  actions.py          lecture des lignes d'action d'un brouillon
   evaluation.py       notation et agrégation
 tests/                miroir de src/, aucun appel réseau
 scripts/              points d'entrée en ligne de commande

@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+from agent.actions import ExpectedAction
 from agent.evaluation import (
     TaskCase,
     gradeCase,
@@ -135,6 +136,132 @@ def test_stepBudgetIsOptional() -> None:
     )
 
     assert result.withinStepBudget is None
+
+
+ACTION_CASE = {
+    "expectedKeywords": (),
+    "expectedActions": (
+        ExpectedAction(anchors=("maquette",), who="Zéphyrin Lavaud", when="4 mars"),
+    ),
+    "people": ("Zéphyrin Lavaud", "Ombeline Sarrazin"),
+}
+
+
+def actionDraft(line: str) -> str:
+    """Un brouillon dont la rubrique Actions contient cette seule ligne."""
+    return f"**Actions**\n{line}\n**Points ouverts**\nAucun"
+
+
+def test_faithfulActionsAreASuccess() -> None:
+    draft = actionDraft(
+        "- Qui : Zéphyrin Lavaud — Quoi : livrer la maquette — Quand : 4 mars"
+    )
+    result = gradeCase(buildCase(**ACTION_CASE), buildTrace(draft, ("readDocument",)))
+
+    assert result.succeeded is True
+    assert result.inventionDetected is False
+
+
+def test_inventionDisqualifiesTheCase() -> None:
+    # Le bon nom est bien dans le brouillon ; c'est la date qui est fausse.
+    draft = actionDraft(
+        "- Qui : Zéphyrin Lavaud — Quoi : livrer la maquette — Quand : 5 mars"
+    )
+    result = gradeCase(buildCase(**ACTION_CASE), buildTrace(draft, ("readDocument",)))
+
+    assert result.inventionDetected is True
+    assert result.succeeded is False
+
+
+def test_forbiddenInventionKeywordIsAnInvention() -> None:
+    draft = actionDraft(
+        "- Qui : Zéphyrin Lavaud — Quoi : livrer la maquette — Quand : 4 mars"
+    )
+    result = gradeCase(
+        buildCase(**ACTION_CASE, forbiddenInventions=("Ombeline Sarrazin",)),
+        buildTrace(draft + "\nPersonne visée : Ombeline Sarrazin.", ("readDocument",)),
+    )
+
+    assert result.inventionDetected is True
+
+
+def test_unreadableActionFailsWithoutCountingAsInvention() -> None:
+    draft = actionDraft("- Zéphyrin Lavaud — livrer la maquette — 4 mars")
+    result = gradeCase(buildCase(**ACTION_CASE), buildTrace(draft, ("readDocument",)))
+
+    assert result.unreadableActions is True
+    assert result.inventionDetected is False
+    assert result.succeeded is False
+
+
+def test_summaryCountsInventionsAndUnreadableActions() -> None:
+    good = actionDraft(
+        "- Qui : Zéphyrin Lavaud — Quoi : livrer la maquette — Quand : 4 mars"
+    )
+    results = [
+        gradeCase(buildCase(**ACTION_CASE), buildTrace(good, ("readDocument",))),
+        gradeCase(
+            buildCase(**ACTION_CASE),
+            buildTrace(good.replace("4 mars", "5 mars"), ("readDocument",)),
+        ),
+        gradeCase(
+            buildCase(**ACTION_CASE),
+            buildTrace(
+                actionDraft("- Zéphyrin — maquette — 4 mars"), ("readDocument",)
+            ),
+        ),
+    ]
+
+    summary = summarize(results)
+
+    assert summary["cas_avec_invention"] == 1
+    assert summary["invention_detectee"] == 0.333
+    assert summary["format_non_conforme"] == 0.333
+    assert summary["par_type"]["nominal"]["invention_detectee"] == 0.333
+
+
+def test_runSummaryHoldsOnlyCounters() -> None:
+    # Le détail des inventions cite le brouillon ; il ne doit jamais atteindre
+    # le fichier de run, qui est commité. Seuls des nombres y vont.
+    draft = actionDraft(
+        "- Qui : Ombeline Sarrazin — Quoi : livrer la maquette — Quand : 5 mars"
+    )
+    result = gradeCase(buildCase(**ACTION_CASE), buildTrace(draft, ("readDocument",)))
+    assert result.inventions
+
+    def leaves(value: object) -> list[object]:
+        if isinstance(value, dict):
+            return [leaf for item in value.values() for leaf in leaves(item)]
+        return [value]
+
+    summary = summarize([result])
+    assert all(
+        leaf is None or isinstance(leaf, int | float) for leaf in leaves(summary)
+    )
+    assert "Sarrazin" not in str(summary)
+
+
+def test_expectedActionsAreReadFromTheTaskSet(tmp_path) -> None:
+    record = {
+        "cas_id": "t-1",
+        "type": "refus",
+        "tache": "Rédige le brouillon.",
+        "actions_attendues": [
+            {"ancrages": ["salle"], "qui": "non attribué", "quand": "avril"},
+            {"ancrages": ["référent"], "qui": "", "quand": "", "facultative": True},
+        ],
+        "personnes": ["Zéphyrin Lavaud"],
+        "inventions_interdites": ["fin avril"],
+    }
+    path = tmp_path / "taches.jsonl"
+    path.write_text(json.dumps(record, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    case = loadTaskSet(path)[0]
+
+    assert case.expectedActions[0].who == "non attribué"
+    assert case.expectedActions[1].optional is True
+    assert case.people == ("Zéphyrin Lavaud",)
+    assert case.forbiddenInventions == ("fin avril",)
 
 
 def test_ratioIgnoresCasesWithoutObject() -> None:

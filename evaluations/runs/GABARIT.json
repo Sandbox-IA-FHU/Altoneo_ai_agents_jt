@@ -31,6 +31,9 @@
   "resultats": {
     "tache_reussie": null,
     "outil_interdit_appele": null,
+    "invention_detectee": null,
+    "cas_avec_invention": null,
+    "format_non_conforme": null,
     "limite_iterations_atteinte": null,
     "dans_le_budget_etapes": null,
     "etapes_medianes": null,
@@ -42,5 +45,5 @@
     "latence_p95_s": null,
     "par_type": {}
   },
-  "commentaire": "Le champ qu'on relit six mois plus tard. Un taux de réussite ne dit pas si les échecs sont des réponses fausses, des plafonds atteints ou des outils interdits appelés : c'est ici qu'on l'écrit."
+  "commentaire": "Le champ qu'on relit six mois plus tard. Un taux de réussite ne dit pas si les échecs sont des inventions, des excès de prudence, des plafonds atteints ou des outils interdits appelés : c'est ici qu'on l'écrit."
 }
