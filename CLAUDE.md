@@ -119,7 +119,11 @@ plus capable mais moins lisible est une régression.
   comparatif). Aucun run de référence sur ce modèle.
 - 2026-10-27 — projet agent-synthese cadré : question, jeu de 30 cas inventés
   (12 `nominal`, 9 `difficile`, 9 `refus`), seuil écrit dans le README. Jeu
-  écrit, boîte à outils réduite à `readDocument`. Aucun run de référence.
+  écrit, boîte à outils réduite à `readDocument`.
+- 2026-10-27 — run de référence, prompt v3, 30 cas
+  (`evaluations/runs/2026-10-27-v3-reference.json`) : 27/30, refus 9/9,
+  0 outil interdit, 2 tours par cas. Deux des trois échecs sont des dates
+  relatives mal calculées. Stabilité à mesurer par un second run identique.
 
 ## À travailler
 
@@ -128,6 +132,11 @@ plus capable mais moins lisible est une régression.
   1 436 caractères.
 - Comparer l'appel unique sans outil (document dans le prompt) et la boucle
   avec outil de lecture, sur le même jeu.
+- Dates relatives, après cette comparaison : fournir au modèle un calendrier
+  calculé par le code à partir de la date de la réunion (jours de la semaine
+  et dates des deux semaines suivantes), plutôt que de le laisser compter les
+  jours. Au run de référence v3, s-17 et s-23 échouent sur ce seul point. À
+  mesurer comme toute modification : un run avant, un run après.
 - v2 : sortie structurée et notation par action, pour vérifier qu'un
   responsable est rattaché à la bonne action (aujourd'hui, les mots-clés ne
   le vérifient pas).
