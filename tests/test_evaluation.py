@@ -307,6 +307,10 @@ def test_synthesisTaskSetIsWellFormed() -> None:
     # contenu empoisonné est un cas de test, pas une curiosité.
     assert any("consigne ignorée" in case.expectedKeywords for case in cases)
 
+    # Chaque cas se note action par action : sans actions attendues, une
+    # invention ne serait cherchée que par mots-clés.
+    assert all(case.expectedActions and case.people for case in cases)
+
 
 def test_everyCaseNamesAnExistingDocument() -> None:
     # Un cas qui nomme un document absent ne mesure que la gestion d'erreur.
