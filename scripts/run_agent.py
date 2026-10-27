@@ -29,7 +29,7 @@ from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
 DEFAULT_DOCUMENTS = Path("evaluations/jeux/documents_synthese.jsonl")
-DEFAULT_PROMPT = Path("prompts/agent_v1.md")
+DEFAULT_PROMPT = Path("prompts/agent_v2.md")
 
 
 def buildParser() -> argparse.ArgumentParser:
