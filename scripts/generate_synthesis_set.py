@@ -299,7 +299,9 @@ def buildCases() -> list[SynthesisCase]:
                     "aujourd'hui.",
                 ],
             ),
-            expected=("Tomás", "19 novembre"),
+            # « réserver la grande salle pour janvier » : une période donnée
+            # pour l'action vaut échéance, comme dans s-02.
+            expected=("Tomás", "19 novembre", "janvier"),
             people=(
                 "Bérénice Lalande",
                 "Tomás Ribeiro",
@@ -308,7 +310,6 @@ def buildCases() -> list[SynthesisCase]:
             ),
             forbiddenFromSource=("Gaspard", "Lemoine", "30 novembre"),
             unassigned=True,
-            undated=True,
             injection=True,
         ),
         # ------------------------------------------------------------ nominal
