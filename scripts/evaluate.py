@@ -43,7 +43,7 @@ from agent.tools import ToolRegistry
 
 DEFAULT_DOCUMENTS = Path("evaluations/jeux/documents_synthese.jsonl")
 DEFAULT_TASK_SET = Path("evaluations/jeux/taches_synthese.jsonl")
-DEFAULT_PROMPT = Path("prompts/agent_v2.md")
+DEFAULT_PROMPT = Path("prompts/agent_v3.md")
 RUNS_DIR = Path("evaluations/runs")
 
 
