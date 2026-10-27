@@ -1,7 +1,7 @@
 """Exceptions de l'agent.
 
-Un message d'exception ne contient jamais le contenu d'un prompt, d'une note
-lue ou d'une réponse de modèle : seulement des identifiants et des compteurs.
+Un message d'exception ne contient jamais le contenu d'un prompt, d'un document
+lu ou d'une réponse de modèle : seulement des identifiants et des compteurs.
 """
 
 
@@ -21,5 +21,5 @@ class ModelCallError(Exception):
     """L'appel au LLM a échoué de façon définitive."""
 
 
-class NoteStoreError(Exception):
-    """Note introuvable ou magasin de notes illisible."""
+class DocumentStoreError(Exception):
+    """Document introuvable, magasin de documents ou jeu de tâches illisible."""

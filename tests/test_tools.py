@@ -4,6 +4,7 @@ import pytest
 
 from agent.errors import UnknownToolError
 from agent.models import ToolSpec
+from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
 SCHEMA = {"type": "object", "properties": {}, "required": []}
@@ -32,8 +33,8 @@ def test_registryExposesSchemas(registry: ToolRegistry) -> None:
     assert all("description" in function for function in functions)
 
 
-def test_sensitiveToolsAreListed(registry: ToolRegistry) -> None:
-    assert registry.sensitiveNames() == ["deleteNote"]
+def test_sensitiveToolsAreListed(registryWithSensitiveTool: ToolRegistry) -> None:
+    assert registryWithSensitiveTool.sensitiveNames() == ["sendDraft"]
 
 
 def test_unknownToolIsNamedInTheError(registry: ToolRegistry) -> None:
@@ -43,13 +44,15 @@ def test_unknownToolIsNamedInTheError(registry: ToolRegistry) -> None:
 
 def test_duplicateToolsAreRefused() -> None:
     with pytest.raises(ValueError, match="double"):
-        ToolRegistry([buildSpec("listNotes"), buildSpec("listNotes")])
+        ToolRegistry([buildSpec("readDocument"), buildSpec("readDocument")])
 
 
-def test_sensitiveToolDescriptionWarnsTheModel(registry: ToolRegistry) -> None:
+def test_sensitiveToolDescriptionWarnsTheModel(documentStore: DocumentStore) -> None:
     # Le modèle doit pouvoir tenir compte du caractère irréversible AVANT de
-    # demander l'action, pas seulement après un refus.
-    description = registry.get("deleteNote").description.lower()
-
-    assert "irréversible" in description
-    assert "validation" in description
+    # demander l'action, pas seulement après un refus. L'agent n'a aujourd'hui
+    # aucun outil sensible : ce test garde la règle pour celui qui en ajoutera.
+    for spec in buildToolbox(documentStore):
+        if spec.isSensitive:
+            description = spec.description.lower()
+            assert "irréversible" in description, spec.name
+            assert "validation" in description, spec.name

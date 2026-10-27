@@ -80,11 +80,12 @@ attribuer un responsable ou une échéance absents du texte source ?
   diffusent eux-mêmes le brouillon.
 - **Ce qui est livré** : un brouillon, relu par un humain. L'agent n'envoie
   rien, n'écrit rien, ne publie rien.
-- **Outils prévus** : un outil de lecture du document (par sections pour un
-  document long), non sensible. **Aucun outil sensible** : pas d'envoi, pas
-  d'écriture. Si un jour on en ajoute un, il est `isSensitive=True` et il
-  entre dans `outils_interdits` des cas `refus`. La boîte à outils actuelle
-  est encore celle du modèle (notes d'exemple) et sera remplacée.
+- **Outil** : `readDocument`, en lecture seule, non sensible. Au-delà de
+  `MAX_DOCUMENT_CHARS` caractères, le document est tronqué et l'outil le dit ;
+  la lecture par sections attendra un document long dans le jeu. **Aucun
+  outil sensible** : pas d'envoi, pas d'écriture. Si un jour on en ajoute un,
+  il est `isSensitive=True` et il entre dans `outils_interdits` des cas
+  `refus`.
 - **Inventer un responsable ou une date** est traité comme l'outil interdit :
   éliminatoire. Mesuré par `mots_cles_interdits` sur les 9 cas `refus`.
 - **Données** : transcriptions et documents inventés, prénoms et réunions
@@ -117,13 +118,14 @@ plus capable mais moins lisible est une régression.
   voie conteneur ajoutée. Réflexion `low` par défaut (décidé le 22/10 sur
   comparatif). Aucun run de référence sur ce modèle.
 - 2026-10-27 — projet agent-synthese cadré : question, jeu de 30 cas inventés
-  (12 `nominal`, 9 `difficile`, 9 `refus`), seuil écrit dans le README. Ni
-  jeu ni run de référence encore.
+  (12 `nominal`, 9 `difficile`, 9 `refus`), seuil écrit dans le README. Jeu
+  écrit, boîte à outils réduite à `readDocument`. Aucun run de référence.
 
 ## À travailler
 
-- Écrire le jeu de 30 cas inventés, puis remplacer la boîte à outils du
-  modèle par l'outil de lecture du document.
+- Ajouter au jeu au moins un document plus long que `MAX_DOCUMENT_CHARS`
+  avant d'écrire la lecture par sections : aujourd'hui, le plus long fait
+  1 436 caractères.
 - Comparer l'appel unique sans outil (document dans le prompt) et la boucle
   avec outil de lecture, sur le même jeu.
 - v2 : sortie structurée et notation par action, pour vérifier qu'un
@@ -177,7 +179,7 @@ action refusée, outil en erreur — hors ligne.
 | `config.py` | Seul endroit qui lit `os.environ`. Valide et échoue au démarrage. |
 | `client.py` | Seul module qui connaît le SDK. Protocole `AgentClient`. Écarte la réflexion. |
 | `tools.py` | Registre : le schéma envoyé au modèle et la fonction exécutée viennent du même objet. |
-| `toolbox.py` | Les quatre outils d'exemple, dont l'évaluateur arithmétique sans `eval`. |
+| `toolbox.py` | `readDocument`, l'unique outil, en lecture seule, et le magasin de documents. |
 | `approval.py` | Politiques de validation. Défaut : refus. |
 | `loop.py` | `runAgent` — la boucle, plafonnée. |
 | `evaluation.py` | Notation et agrégation : réussite, tours, jetons, latence. |
@@ -192,17 +194,19 @@ disparaît pas, et l'atteindre reste visible dans la trace. Tests :
 **2. Le passage obligatoire par la validation.** Tout outil `isSensitive`
 traverse `approval.approve` dans `executeCall`. Aucun chemin de contournement,
 quelle que soit la justification écrite par le modèle. Test :
-`test_sensitiveToolNeedsApproval`.
+`test_sensitiveToolNeedsApproval`. L'agent n'a aucun outil sensible : le test
+utilise `sendDraft`, un outil fictif défini dans `tests/conftest.py`.
 
-**3. `eval` n'entre jamais dans ce dépôt.** L'outil `calculate` analyse
-l'expression et n'autorise que des nœuds arithmétiques. Du code produit par un
-modèle est du code plausible, pas du code sûr. Test :
-`test_functionCallsAreRefused`.
+**3. `eval` n'entre jamais dans ce dépôt.** Aucun outil n'interprète du texte
+comme du code. Du code produit par un modèle est du code plausible, pas du
+code sûr. Test : `test_evalNeverEntersTheCode`, qui cherche `eval(` et
+`exec(` dans `src/` et `scripts/`.
 
 **4. Le contenu d'outil reste de la donnée.** On ne filtre pas les résultats
 d'outils, on ne prétend pas détecter une injection : on limite la surface
-d'outils. Le magasin d'exemple contient une note empoisonnée, elle doit y
-rester.
+d'outils. Trois documents du jeu (cas `s-06`, `s-25`, `s-28`) et un document
+de `tests/conftest.py` contiennent une consigne adressée à l'assistant : ils
+doivent y rester.
 
 ---
 
@@ -263,7 +267,7 @@ boucle parce que le **résultat d'outil ne lui apprend rien** : chaîne vide,
 message d'erreur sans indication de correction, format ambigu.
 
 Correction : dans `toolbox.py`, faire que l'outil dise ce qu'il faut faire.
-`readNote` liste les notes disponibles quand le nom est inconnu — c'est
+`readDocument` liste les documents disponibles quand le nom est inconnu — c'est
 délibéré, et c'est ce qui permet au modèle de se rattraper en un tour au lieu
 de réessayer trois fois.
 
@@ -340,7 +344,7 @@ tour**, au même titre que le prompt système. Trois conséquences :
 | Qu'il n'obéisse pas à une note empoisonnée | réduit la fréquence | **ne garantit rien** |
 | Qu'aucune action irréversible n'ait lieu sans accord | non | `isSensitive` + `approval` |
 | Que la charge du serveur soit bornée | non | `MAX_ITERATIONS` |
-| Qu'aucun code arbitraire ne s'exécute | non | l'analyseur de `calculate` |
+| Qu'aucun code arbitraire ne s'exécute | non | aucun outil n'interprète de code |
 
 La ligne à retenir : **une garantie qui repose sur une phrase de prompt n'en
 est pas une.** Si on te demande d'empêcher un comportement dangereux en

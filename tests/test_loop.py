@@ -49,70 +49,78 @@ def test_iterationLimitIsNotSilent(registry: ToolRegistry) -> None:
     assert "3" in trace.finalText
 
 
-def test_sensitiveToolNeedsApproval(registry: ToolRegistry, noteStore) -> None:
+def test_sensitiveToolNeedsApproval(
+    registryWithSensitiveTool: ToolRegistry, sentDrafts: list[str]
+) -> None:
+    # L'agent n'a aucun outil sensible ; le mécanisme se teste avec l'outil
+    # fictif `sendDraft` de conftest.py.
     client = ScriptedClient(
         [
-            toolTurn(("c1", "deleteNote", {"nom": "note-a-supprimer"})),
-            textTurn("La suppression a été refusée faute de validation."),
+            toolTurn(("c1", "sendDraft", {"destinataires": "toute l'équipe"})),
+            textTurn("L'envoi a été refusé faute de validation."),
         ]
     )
 
     trace = runAgent(
         client=client,
-        registry=registry,
+        registry=registryWithSensitiveTool,
         approval=DenyAll(),
         systemPrompt=PROMPT,
-        task="supprime la note",
+        task="envoie le brouillon",
     )
 
-    assert trace.refusedTools() == ["deleteNote"]
-    # La note est toujours là : le refus a bien empêché l'action.
-    assert "note-a-supprimer" in noteStore.listNames()
+    assert trace.refusedTools() == ["sendDraft"]
+    # Rien n'est parti : le refus a bien empêché l'action.
+    assert sentDrafts == []
 
 
-def test_approvedSensitiveToolRuns(registry: ToolRegistry, noteStore) -> None:
+def test_approvedSensitiveToolRuns(
+    registryWithSensitiveTool: ToolRegistry, sentDrafts: list[str]
+) -> None:
     client = ScriptedClient(
         [
-            toolTurn(("c1", "deleteNote", {"nom": "note-a-supprimer"})),
-            textTurn("Note supprimée."),
+            toolTurn(("c1", "sendDraft", {"destinataires": "toute l'équipe"})),
+            textTurn("Brouillon envoyé."),
         ]
     )
 
     trace = runAgent(
         client=client,
-        registry=registry,
+        registry=registryWithSensitiveTool,
         approval=AllowAll(),
         systemPrompt=PROMPT,
-        task="supprime la note",
+        task="envoie le brouillon",
     )
 
     assert trace.refusedTools() == []
-    assert "note-a-supprimer" not in noteStore.listNames()
+    assert sentDrafts == ["toute l'équipe"]
 
 
 def test_nonSensitiveToolNeedsNoApproval(registry: ToolRegistry) -> None:
     # DenyAll refuse les outils sensibles, pas les autres : sinon l'agent ne
     # pourrait plus rien faire du tout en mode refus.
-    client = ScriptedClient([toolTurn(("c1", "listNotes", {})), textTurn("Voilà.")])
+    client = ScriptedClient(
+        [toolTurn(("c1", "readDocument", {"nom": "point-hebdo"})), textTurn("Voilà.")]
+    )
 
     trace = runAgent(
         client=client,
         registry=registry,
         approval=DenyAll(),
         systemPrompt=PROMPT,
-        task="liste les notes",
+        task="résume le point hebdo",
     )
 
     assert trace.refusedTools() == []
-    assert trace.toolNames() == ["listNotes"]
+    assert trace.toolNames() == ["readDocument"]
 
 
 def test_loopStopsWhenTheModelStopsCallingTools(registry: ToolRegistry) -> None:
     client = ScriptedClient(
         [
-            toolTurn(("c1", "listNotes", {})),
-            toolTurn(("c2", "readNote", {"nom": "astreinte"})),
-            textTurn("Le tarif est de 95 euros."),
+            toolTurn(("c1", "readDocument", {"nom": "document-inconnu"})),
+            toolTurn(("c2", "readDocument", {"nom": "point-hebdo"})),
+            textTurn("Zéphyrin livre la maquette le 9 mars."),
         ]
     )
 
@@ -121,12 +129,12 @@ def test_loopStopsWhenTheModelStopsCallingTools(registry: ToolRegistry) -> None:
         registry=registry,
         approval=DenyAll(),
         systemPrompt=PROMPT,
-        task="quel tarif ?",
+        task="résume le point hebdo",
     )
 
     assert trace.stoppedReason == STOP_COMPLETED
     assert trace.stepCount == 3
-    assert trace.finalText == "Le tarif est de 95 euros."
+    assert trace.finalText == "Zéphyrin livre la maquette le 9 mars."
 
 
 def test_parallelToolResultsShareOneRoundTrip(registry: ToolRegistry) -> None:
@@ -137,8 +145,8 @@ def test_parallelToolResultsShareOneRoundTrip(registry: ToolRegistry) -> None:
     client = ScriptedClient(
         [
             toolTurn(
-                ("c1", "readNote", {"nom": "astreinte"}),
-                ("c2", "readNote", {"nom": "sauvegardes"}),
+                ("c1", "readDocument", {"nom": "point-hebdo"}),
+                ("c2", "readDocument", {"nom": "atelier-budget"}),
             ),
             textTurn("Fini."),
         ]
@@ -149,7 +157,7 @@ def test_parallelToolResultsShareOneRoundTrip(registry: ToolRegistry) -> None:
         registry=registry,
         approval=DenyAll(),
         systemPrompt=PROMPT,
-        task="lis les deux notes",
+        task="résume les deux réunions",
     )
 
     assert len(client.calls) == 2
@@ -183,8 +191,8 @@ def test_unknownToolBecomesAnErrorResult(registry: ToolRegistry) -> None:
 def test_toolFailureBecomesAnErrorResult(registry: ToolRegistry) -> None:
     client = ScriptedClient(
         [
-            toolTurn(("c1", "readNote", {"nom": "note-inexistante"})),
-            textTurn("Cette note n'existe pas."),
+            toolTurn(("c1", "readDocument", {"nom": "document-inexistant"})),
+            textTurn("Ce document n'existe pas."),
         ]
     )
 
@@ -193,7 +201,7 @@ def test_toolFailureBecomesAnErrorResult(registry: ToolRegistry) -> None:
         registry=registry,
         approval=DenyAll(),
         systemPrompt=PROMPT,
-        task="lis une note",
+        task="résume un document",
     )
 
     assert trace.steps[0].outcomes[0].isError is True
@@ -204,8 +212,8 @@ def test_traceSummaryLeaksNoContent(registry: ToolRegistry) -> None:
     # affiché et journalisé ne doit porter que des noms et des compteurs.
     client = ScriptedClient(
         [
-            toolTurn(("c1", "readNote", {"nom": "astreinte"})),
-            textTurn("Le tarif est de 95 euros."),
+            toolTurn(("c1", "readDocument", {"nom": "point-hebdo"})),
+            textTurn("Zéphyrin livre la maquette le 9 mars."),
         ]
     )
 
@@ -214,17 +222,21 @@ def test_traceSummaryLeaksNoContent(registry: ToolRegistry) -> None:
         registry=registry,
         approval=DenyAll(),
         systemPrompt=PROMPT,
-        task="quel tarif ?",
+        task="résume le point hebdo",
     )
     summary = summarizeTrace(trace)
 
-    assert "readNote" in summary
-    assert "95 euros hors taxes" not in summary
+    assert "readDocument" in summary
+    assert "Zéphyrin" not in summary
+    assert "maquette" not in summary
 
 
 def test_usageIsAccumulatedAcrossTurns(registry: ToolRegistry) -> None:
     client = ScriptedClient(
-        [toolTurn(("c1", "listNotes", {})), textTurn("Trois notes.")]
+        [
+            toolTurn(("c1", "readDocument", {"nom": "point-hebdo"})),
+            textTurn("Une action."),
+        ]
     )
 
     trace = runAgent(
@@ -232,7 +244,7 @@ def test_usageIsAccumulatedAcrossTurns(registry: ToolRegistry) -> None:
         registry=registry,
         approval=DenyAll(),
         systemPrompt=PROMPT,
-        task="liste",
+        task="résume",
     )
 
     assert trace.usage.inputTokens == 200

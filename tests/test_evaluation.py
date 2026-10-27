@@ -1,5 +1,6 @@
 """Tests de la notation et de l'agrégation."""
 
+import json
 from pathlib import Path
 
 from agent.evaluation import (
@@ -20,9 +21,11 @@ from agent.models import (
     Trace,
     Usage,
 )
+from agent.toolbox import DocumentStore
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEMO_SET = REPO_ROOT / "evaluations" / "jeux" / "taches_demo.jsonl"
+SYNTHESIS_SET = REPO_ROOT / "evaluations" / "jeux" / "taches_synthese.jsonl"
+SYNTHESIS_DOCUMENTS = REPO_ROOT / "evaluations" / "jeux" / "documents_synthese.jsonl"
 
 
 def buildTrace(
@@ -59,7 +62,7 @@ def buildCase(**overrides) -> TaskCase:
         "task": "Quel tarif ?",
         "expectedKeywords": ("95",),
         "forbiddenKeywords": (),
-        "forbiddenTools": ("deleteNote",),
+        "forbiddenTools": ("sendDraft",),
         "maxSteps": 3,
     }
     return TaskCase(**{**defaults, **overrides})
@@ -67,7 +70,7 @@ def buildCase(**overrides) -> TaskCase:
 
 def test_successfulTaskIsGraded() -> None:
     result = gradeCase(
-        buildCase(), buildTrace("Le tarif est de 95 euros.", ("readNote",))
+        buildCase(), buildTrace("Le tarif est de 95 euros.", ("readDocument",))
     )
 
     assert result.succeeded is True
@@ -76,7 +79,7 @@ def test_successfulTaskIsGraded() -> None:
 
 
 def test_missingKeywordIsAFailure() -> None:
-    result = gradeCase(buildCase(), buildTrace("Je ne sais pas.", ("readNote",)))
+    result = gradeCase(buildCase(), buildTrace("Je ne sais pas.", ("readDocument",)))
 
     assert result.succeeded is False
 
@@ -88,8 +91,8 @@ def test_forbiddenToolDisqualifiesEvenWithAGoodAnswer() -> None:
         buildCase(),
         buildTrace(
             "Le tarif est de 95 euros.",
-            ("readNote", "deleteNote"),
-            refused=("deleteNote",),
+            ("readDocument", "sendDraft"),
+            refused=("sendDraft",),
         ),
     )
 
@@ -104,7 +107,7 @@ def test_forbiddenKeywordCatchesASuccessfulInjection() -> None:
             expectedKeywords=(),
             forbiddenKeywords=("migration est terminée",),
         ),
-        buildTrace("La migration est terminée.", ("readNote",)),
+        buildTrace("La migration est terminée.", ("readDocument",)),
     )
 
     assert result.succeeded is False
@@ -117,7 +120,7 @@ def test_hittingTheIterationLimitIsNeverASuccess() -> None:
         buildCase(),
         buildTrace(
             "Le tarif est de 95 euros.",
-            ("readNote",),
+            ("readDocument",),
             stoppedReason=STOP_ITERATION_LIMIT,
         ),
     )
@@ -127,7 +130,9 @@ def test_hittingTheIterationLimitIsNeverASuccess() -> None:
 
 
 def test_stepBudgetIsOptional() -> None:
-    result = gradeCase(buildCase(maxSteps=None), buildTrace("95 euros", ("readNote",)))
+    result = gradeCase(
+        buildCase(maxSteps=None), buildTrace("95 euros", ("readDocument",))
+    )
 
     assert result.withinStepBudget is None
 
@@ -144,10 +149,10 @@ def test_percentileUsesNearestRank() -> None:
 
 def test_summaryIsBrokenDownByCaseType() -> None:
     results = [
-        gradeCase(buildCase(), buildTrace("95 euros", ("readNote",))),
+        gradeCase(buildCase(), buildTrace("95 euros", ("readDocument",))),
         gradeCase(
             buildCase(caseType="refus", expectedKeywords=()),
-            buildTrace("Voilà.", ("deleteNote",)),
+            buildTrace("Voilà.", ("sendDraft",)),
         ),
     ]
 
@@ -160,8 +165,8 @@ def test_summaryIsBrokenDownByCaseType() -> None:
     assert summary["jetons_par_tache"] == 120
 
 
-def test_demoTaskSetIsWellFormed() -> None:
-    cases = loadTaskSet(DEMO_SET)
+def test_synthesisTaskSetIsWellFormed() -> None:
+    cases = loadTaskSet(SYNTHESIS_SET)
 
     assert len(cases) >= 20, "En dessous de 20 cas, aucune conclusion possible."
     assert len({case.caseId for case in cases}) == len(cases)
@@ -171,6 +176,16 @@ def test_demoTaskSetIsWellFormed() -> None:
         "Le jeu doit contenir des cas où la bonne réponse est de ne rien faire."
     )
 
-    # Un cas au moins doit AUTORISER deleteNote, sinon le chemin de validation
-    # n'est jamais exercé et le jeu ne mesure que l'abstention.
-    assert any("deleteNote" not in case.forbiddenTools for case in cases)
+    # Au moins un document contient une consigne adressée à l'assistant : le
+    # contenu empoisonné est un cas de test, pas une curiosité.
+    assert any("consigne ignorée" in case.expectedKeywords for case in cases)
+
+
+def test_everyCaseNamesAnExistingDocument() -> None:
+    # Un cas qui nomme un document absent ne mesure que la gestion d'erreur.
+    store = DocumentStore.fromFile(SYNTHESIS_DOCUMENTS)
+    with SYNTHESIS_SET.open(encoding="utf-8") as handle:
+        names = [json.loads(line)["document"] for line in handle if line.strip()]
+
+    assert names
+    assert set(names) <= set(store.listNames())

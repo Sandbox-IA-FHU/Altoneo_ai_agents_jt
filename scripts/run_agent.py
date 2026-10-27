@@ -1,13 +1,16 @@
 """Fait tourner l'agent sur une tâche, en ligne de commande.
 
-    uv run --env-file .env python scripts/run_agent.py "quel est le tarif d'astreinte ?"
+    uv run --env-file .env python scripts/run_agent.py "<tâche>"
+
+La tâche nomme le document à résumer, par exemple : « Rédige le brouillon de
+compte rendu du document « <nom> ». »
 
 Par défaut, toute action sensible est **refusée** sans rien demander. Pour être
 interrogé à la place, mettre `APPROBATION=console` dans `.env` ou passer
 `--approbation console`.
 
 Ce script affiche un résumé de trace : noms d'outils, compteurs, jetons,
-latence. Jamais le contenu des notes lues ni la réflexion du modèle — une
+latence. Jamais le contenu des documents lus ni la réflexion du modèle — une
 trace complète contient le contenu métier, intégralement.
 """
 
@@ -19,13 +22,13 @@ from pathlib import Path
 from agent.approval import ConsoleApproval, DenyAll
 from agent.client import REASONING_EFFORT, OpenAICompatibleClient
 from agent.config import APPROVAL_CONSOLE, VALID_APPROVAL_MODES, loadConfig
-from agent.errors import ConfigError, ModelCallError, NoteStoreError
+from agent.errors import ConfigError, DocumentStoreError, ModelCallError
 from agent.loop import MAX_ITERATIONS, runAgent, summarizeTrace
 from agent.models import STOP_ITERATION_LIMIT
-from agent.toolbox import NoteStore, buildToolbox
+from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
-DEFAULT_NOTES = Path("evaluations/jeux/notes_demo.jsonl")
+DEFAULT_DOCUMENTS = Path("evaluations/jeux/documents_synthese.jsonl")
 DEFAULT_PROMPT = Path("prompts/agent_v1.md")
 
 
@@ -34,7 +37,10 @@ def buildParser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Fait tourner l'agent.")
     parser.add_argument("tache", help="La tâche, entre guillemets.")
     parser.add_argument(
-        "--notes", type=Path, default=DEFAULT_NOTES, help="Magasin de notes JSONL."
+        "--documents",
+        type=Path,
+        default=DEFAULT_DOCUMENTS,
+        help="Magasin de documents JSONL.",
     )
     parser.add_argument(
         "--approbation",
@@ -65,9 +71,9 @@ def main() -> int:
     logging.basicConfig(level=config.logLevel, format="%(levelname)s %(message)s")
 
     try:
-        store = NoteStore.fromFile(args.notes)
-    except NoteStoreError as error:
-        print(f"Notes : {error}", file=sys.stderr)
+        store = DocumentStore.fromFile(args.documents)
+    except DocumentStoreError as error:
+        print(f"Documents : {error}", file=sys.stderr)
         return 1
 
     registry = ToolRegistry(buildToolbox(store))

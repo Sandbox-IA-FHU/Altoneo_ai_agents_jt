@@ -7,7 +7,9 @@ irréversible a lieu.
 from agent.approval import AllowAll, ConsoleApproval, DenyAll
 from agent.models import ToolCall
 
-CALL = ToolCall(callId="c1", toolName="deleteNote", arguments={"nom": "a"})
+CALL = ToolCall(
+    callId="c1", toolName="sendDraft", arguments={"destinataires": "équipe"}
+)
 
 
 def test_denyAllRefuses() -> None:
@@ -41,5 +43,5 @@ def test_consoleShowsToolAndArguments() -> None:
 
     ConsoleApproval(ask=capture).approve(CALL)
 
-    assert "deleteNote" in seen[0]
-    assert "nom" in seen[0]
+    assert "sendDraft" in seen[0]
+    assert "destinataires" in seen[0]

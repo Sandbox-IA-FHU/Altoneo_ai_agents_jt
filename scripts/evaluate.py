@@ -11,8 +11,9 @@ Trois points sur lesquels ce script ne transige pas :
 - **La validation est toujours en mode refus.** Un jeu d'évaluation ne doit
   jamais pouvoir déclencher une action réelle, et un run qui attend une réponse
   humaine ne se termine pas.
-- **Chaque cas repart d'un magasin de notes neuf.** Un cas qui modifie l'état
-  fausserait tous les suivants, et le score dépendrait de l'ordre des cas.
+- **Chaque cas repart d'un magasin de documents neuf.** Un cas qui modifierait
+  l'état fausserait tous les suivants, et le score dépendrait de l'ordre des
+  cas.
 - **Le modèle est consigné en entier** : nom exposé, modèle réel déclaré par
   le serveur, révision et niveau de réflexion. Le nom exposé est stable alors
   que le modèle derrière peut changer.
@@ -34,14 +35,14 @@ from agent.client import (
     OpenAICompatibleClient,
 )
 from agent.config import loadConfig
-from agent.errors import ConfigError, ModelCallError, NoteStoreError
+from agent.errors import ConfigError, DocumentStoreError, ModelCallError
 from agent.evaluation import gradeCase, loadTaskSet, summarize
 from agent.loop import MAX_ITERATIONS, runAgent
-from agent.toolbox import NoteStore, buildToolbox
+from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
-DEFAULT_NOTES = Path("evaluations/jeux/notes_demo.jsonl")
-DEFAULT_TASK_SET = Path("evaluations/jeux/taches_demo.jsonl")
+DEFAULT_DOCUMENTS = Path("evaluations/jeux/documents_synthese.jsonl")
+DEFAULT_TASK_SET = Path("evaluations/jeux/taches_synthese.jsonl")
 DEFAULT_PROMPT = Path("prompts/agent_v1.md")
 RUNS_DIR = Path("evaluations/runs")
 
@@ -49,7 +50,7 @@ RUNS_DIR = Path("evaluations/runs")
 def buildParser() -> argparse.ArgumentParser:
     """Décrit les arguments de la ligne de commande."""
     parser = argparse.ArgumentParser(description="Évalue l'agent.")
-    parser.add_argument("--notes", type=Path, default=DEFAULT_NOTES)
+    parser.add_argument("--documents", type=Path, default=DEFAULT_DOCUMENTS)
     parser.add_argument("--jeu", type=Path, default=DEFAULT_TASK_SET)
     parser.add_argument(
         "--etiquette", default="run", help="Suffixe du nom de fichier de run."
@@ -107,8 +108,8 @@ def main() -> int:
 
     try:
         cases = loadTaskSet(args.jeu)
-        NoteStore.fromFile(args.notes)  # échoue tout de suite si illisible
-    except NoteStoreError as error:
+        DocumentStore.fromFile(args.documents)  # échoue tout de suite si illisible
+    except DocumentStoreError as error:
         print(f"Données : {error}", file=sys.stderr)
         return 1
 
@@ -143,7 +144,7 @@ def main() -> int:
     results = []
     for case in cases:
         # Magasin neuf pour chaque cas : aucun cas n'influence le suivant.
-        registry = ToolRegistry(buildToolbox(NoteStore.fromFile(args.notes)))
+        registry = ToolRegistry(buildToolbox(DocumentStore.fromFile(args.documents)))
         try:
             trace = runAgent(
                 client=client,

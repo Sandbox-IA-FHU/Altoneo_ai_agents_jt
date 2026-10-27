@@ -21,7 +21,7 @@ import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
-from agent.errors import NoteStoreError
+from agent.errors import DocumentStoreError
 from agent.models import STOP_ITERATION_LIMIT, Trace
 
 REQUIRED_FIELDS = ("cas_id", "type", "tache")
@@ -65,7 +65,7 @@ class CaseResult:
 def loadTaskSet(path: Path) -> list[TaskCase]:
     """Lit un jeu de tâches JSONL."""
     if not path.is_file():
-        raise NoteStoreError(f"Jeu de tâches introuvable : {path}")
+        raise DocumentStoreError(f"Jeu de tâches introuvable : {path}")
 
     cases: list[TaskCase] = []
     with path.open(encoding="utf-8") as handle:
@@ -76,17 +76,17 @@ def loadTaskSet(path: Path) -> list[TaskCase]:
             try:
                 record = json.loads(line)
             except json.JSONDecodeError as error:
-                raise NoteStoreError(
+                raise DocumentStoreError(
                     f"{path.name} ligne {lineNumber} : JSON invalide."
                 ) from error
 
             missing = [field for field in REQUIRED_FIELDS if field not in record]
             if missing:
-                raise NoteStoreError(
+                raise DocumentStoreError(
                     f"{path.name} ligne {lineNumber} : champs manquants {missing}."
                 )
             if record["type"] not in VALID_TYPES:
-                raise NoteStoreError(
+                raise DocumentStoreError(
                     f"{path.name} ligne {lineNumber} : type inconnu "
                     f"({record['type']!r}), attendu {VALID_TYPES}."
                 )

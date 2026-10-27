@@ -37,7 +37,8 @@ def test_reasoningNeverReachesHistoryOrTrace(registry: ToolRegistry) -> None:
     client = ScriptedClient(
         [
             toolTurn(
-                ("c1", "readNote", {"nom": "astreinte"}), reasoning=SECRET_REASONING
+                ("c1", "readDocument", {"nom": "point-hebdo"}),
+                reasoning=SECRET_REASONING,
             ),
             textTurn("Le tarif est de 95 euros.", reasoning=SECRET_REASONING),
         ]
@@ -57,14 +58,14 @@ def test_reasoningNeverReachesHistoryOrTrace(registry: ToolRegistry) -> None:
 
 
 def test_toolCallsAreReadFromTheOpenAIFormat() -> None:
-    turn = toolTurn(("c1", "readNote", {"nom": "astreinte"}))
+    turn = toolTurn(("c1", "readDocument", {"nom": "point-hebdo"}))
 
     assert turn.toolCalls[0].callId == "c1"
-    assert turn.toolCalls[0].toolName == "readNote"
-    assert turn.toolCalls[0].arguments == {"nom": "astreinte"}
+    assert turn.toolCalls[0].toolName == "readDocument"
+    assert turn.toolCalls[0].arguments == {"nom": "point-hebdo"}
     # Les arguments repartent tels que le modèle les a écrits.
     assert turn.assistantMessage["tool_calls"][0]["function"]["arguments"] == (
-        '{"nom": "astreinte"}'
+        '{"nom": "point-hebdo"}'
     )
 
 
@@ -75,7 +76,7 @@ def test_unreadableArgumentsDoNotKillTheLoop() -> None:
             {
                 "id": "c1",
                 "type": "function",
-                "function": {"name": "readNote", "arguments": "{pas du json"},
+                "function": {"name": "readDocument", "arguments": "{pas du json"},
             }
         ],
         "tool_calls",
@@ -124,7 +125,7 @@ def test_keptReasoningGoesBackToTheModelOnly(registry: ToolRegistry) -> None:
     client = ScriptedClient(
         [
             toolTurn(
-                ("c1", "readNote", {"nom": "astreinte"}),
+                ("c1", "readDocument", {"nom": "point-hebdo"}),
                 reasoning=SECRET_REASONING,
                 keepReasoning=True,
             ),
@@ -149,7 +150,7 @@ def test_keptReasoningGoesBackToTheModelOnly(registry: ToolRegistry) -> None:
         task="quel tarif ?",
         expectedKeywords=("95",),
         forbiddenKeywords=(),
-        forbiddenTools=("deleteNote",),
+        forbiddenTools=("sendDraft",),
         maxSteps=3,
     )
     runSummary = summarize([gradeCase(case, trace)])
