@@ -1,7 +1,7 @@
 [project]
-name = "agentic-model"
+name = "agent-synthese"
 version = "0.1.0"
-description = "Dépôt modèle pour un agent à outils"
+description = "Agent de synthèse de comptes rendus de réunion et de documents longs"
 requires-python = ">=3.13"
 dependencies = [
     "openai>=3.37,<4",

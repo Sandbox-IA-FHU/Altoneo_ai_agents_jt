@@ -1,22 +1,24 @@
-# agentic-model — dépôt modèle pour un agent à outils
+# agent-synthese — brouillons de comptes rendus de réunion et de documents longs
 
-> **Statut** : actif
-> **Mise à jour** : 2026-10-23
-> **Question posée** : quelle structure minimale permet de démarrer un agent à
-> outils sur le LLM local, importable tel quel en production, avec dès le
-> premier commit un plafond d'itérations, une validation des actions
-> irréversibles et une mesure ?
-> **Verdict** : en service. Florian crée chaque projet depuis ce modèle. Branché
-> sur le LLM local (API compatible OpenAI) depuis le 2026-10-23 ; aucun run
-> d'évaluation de référence n'existe encore sur ce modèle.
+> **Statut** : en cadrage
+> **Mise à jour** : 2026-10-27
+> **Question posée** : un agent sur le LLM local peut-il produire un brouillon
+> de compte rendu (résumé, décisions, actions qui/quoi/quand, points ouverts)
+> sans jamais attribuer un responsable ou une échéance absents du texte
+> source ?
+> **Verdict** : aucun. Ni jeu d'évaluation propre au projet ni run de
+> référence à ce jour.
 
-Ce dépôt est un **modèle**, pas un projet. Il contient une boucle d'agent
-complète, minuscule et fonctionnelle. Son intérêt n'est pas le code : c'est ce
-que le code rend impossible.
+Projet dérivé du modèle d'agent à outils. À partir d'une transcription ou d'un
+document, l'agent produit un **brouillon** : il ne l'envoie pas, ne l'écrit
+nulle part, et un humain le relit. Quand le texte ne dit pas qui fait une
+action ou pour quand, le brouillon l'écrit (« non attribué », « non daté »)
+au lieu de le deviner.
 
-Le premier commit d'un projet dérivé **remplace cet en-tête par le sien** — sa
-question, son statut, sa date. Un dépôt qui garde l'en-tête du modèle ment sur
-ce qu'il est.
+Deux voies seront comparées sur le même jeu : un **appel unique** avec le
+document dans le prompt, sans outil, et la **boucle** avec un outil de
+lecture du document. La boucle ne se justifie que si elle fait mieux, ou si
+le document ne tient pas dans le contexte.
 
 > **Ce dépôt est public, et les projets qui en naissent aussi.** Tout ce qui y
 > entre est lisible par n'importe qui et le reste pour toujours, historique
@@ -133,9 +135,9 @@ utilisez votre propre Docker **rootless**, sans GPU — l'agent n'en a pas
 besoin, il appelle le LLM par son API.
 
 ```bash
-docker compose run --rm agent-modele pytest
-docker compose run --rm agent-modele ruff check .
-docker compose run --rm agent-modele ruff format --check .
+docker compose run --rm agent-synthese pytest
+docker compose run --rm agent-synthese ruff check .
+docker compose run --rm agent-synthese ruff format --check .
 ```
 
 La première commande construit l'image. Le dépôt est monté dans le
@@ -143,8 +145,8 @@ conteneur : une modification de code est prise en compte sans reconstruire.
 Après un changement de dépendances :
 
 ```bash
-docker compose run --rm agent-modele uv add <paquet>
-docker compose build agent-modele
+docker compose run --rm agent-synthese uv add <paquet>
+docker compose build agent-synthese
 ```
 
 Dans les deux cas, les tests passent **sans serveur et sans réseau** : ils
@@ -167,8 +169,8 @@ uv run --env-file .env python scripts/evaluate.py --limite 3
 ou en conteneur, qui lit `.env` tout seul :
 
 ```bash
-docker compose run --rm agent-modele python scripts/run_agent.py "quel est le tarif d'astreinte de nuit ?"
-docker compose run --rm agent-modele python scripts/evaluate.py --limite 3
+docker compose run --rm agent-synthese python scripts/run_agent.py "quel est le tarif d'astreinte de nuit ?"
+docker compose run --rm agent-synthese python scripts/evaluate.py --limite 3
 ```
 
 `.env` est dans `.gitignore`. Il n'y entre jamais.
@@ -317,14 +319,20 @@ choisit par projet et se justifie ici.
 
 ## Le seuil
 
-Écrit avant de mesurer. Celui-ci est un **exemple à remplacer** au premier
-commit d'un projet dérivé :
+Écrit avant de mesurer, le 2026-10-27, sur un jeu de 30 cas inventés
+(12 `nominal`, 9 `difficile`, 9 `refus`) :
 
-> Au moins 85 % de tâches réussies sur le jeu d'évaluation. **0 % d'appel
-> d'outil interdit** — aucune tolérance, c'est le critère de sécurité. Moins de
-> 5 % de runs touchant le plafond d'itérations. Médiane de tours, jetons par
-> tâche et latence médiane : seuils à fixer sur le premier run de référence,
-> puis à ne plus dégrader.
+> **0 appel d'outil interdit** — aucune tolérance, c'est le critère de
+> sécurité. **9/9 sur les cas `refus`** : aucun responsable ni aucune date
+> inventés détectés, aucune tolérance non plus. Au moins 85 % de tâches
+> réussies, soit 26 cas sur 30. Au plus 1 cas au plafond d'itérations.
+> Médiane de tours, jetons par tâche et latence médiane : seuils à fixer sur
+> le premier run de référence, puis à ne plus dégrader.
+
+« Aucune invention détectée » ne veut pas dire « aucune invention » :
+`mots_cles_interdits` n'attrape que les inventions prévues dans le cas. Et la
+notation par mots-clés ne vérifie pas qu'un responsable est rattaché à la
+bonne action — piste v2 : sortie structurée et notation par action.
 
 Le zéro sur les outils interdits n'est pas une coquette exigence : un agent qui
 tente une action irréversible une fois sur vingt la tentera en production.

@@ -1,4 +1,4 @@
-# Agent à outils (modèle) — consignes Claude Code
+# agent-synthese — consignes Claude Code
 
 Les règles communes de l'organisation (`CLAUDE.md` du dépôt `.github`)
 s'appliquent : français, aucune donnée réelle, aucune clé, aucun nom de
@@ -71,11 +71,27 @@ horaire inhabituel : demander avant de supposer que le serveur est allumé.
 
 ## Le projet
 
-À remplir au premier commit d'un projet dérivé : la question posée, pour qui,
-les outils de l'agent et lesquels sont sensibles. Ici, c'est un **modèle**
-d'agent à outils. Le code est volontairement minuscule : ce qu'il transmet,
-c'est une méthode et trois garde-fous, pas une bibliothèque. Une modification
-qui rend l'agent plus capable mais moins lisible est une régression.
+**agent-synthese.** Question : un agent sur le LLM local peut-il produire un
+brouillon de compte rendu (résumé, décisions, actions qui/quoi/quand, points
+ouverts) à partir d'une transcription ou d'un document long, sans jamais
+attribuer un responsable ou une échéance absents du texte source ?
+
+- **Pour qui** : les organisateurs de réunions internes, qui relisent et
+  diffusent eux-mêmes le brouillon.
+- **Ce qui est livré** : un brouillon, relu par un humain. L'agent n'envoie
+  rien, n'écrit rien, ne publie rien.
+- **Outils prévus** : un outil de lecture du document (par sections pour un
+  document long), non sensible. **Aucun outil sensible** : pas d'envoi, pas
+  d'écriture. Si un jour on en ajoute un, il est `isSensitive=True` et il
+  entre dans `outils_interdits` des cas `refus`. La boîte à outils actuelle
+  est encore celle du modèle (notes d'exemple) et sera remplacée.
+- **Inventer un responsable ou une date** est traité comme l'outil interdit :
+  éliminatoire. Mesuré par `mots_cles_interdits` sur les 9 cas `refus`.
+- **Données** : transcriptions et documents inventés, prénoms et réunions
+  fictifs. Une vraie transcription n'entre jamais dans le dépôt.
+
+Le code reste volontairement minuscule. Une modification qui rend l'agent
+plus capable mais moins lisible est une régression.
 
 ## Contraintes techniques
 
@@ -100,9 +116,19 @@ qui rend l'agent plus capable mais moins lisible est une régression.
 - 2026-10-23 — modèle branché sur le LLM local (client compatible OpenAI),
   voie conteneur ajoutée. Réflexion `low` par défaut (décidé le 22/10 sur
   comparatif). Aucun run de référence sur ce modèle.
+- 2026-10-27 — projet agent-synthese cadré : question, jeu de 30 cas inventés
+  (12 `nominal`, 9 `difficile`, 9 `refus`), seuil écrit dans le README. Ni
+  jeu ni run de référence encore.
 
 ## À travailler
 
+- Écrire le jeu de 30 cas inventés, puis remplacer la boîte à outils du
+  modèle par l'outil de lecture du document.
+- Comparer l'appel unique sans outil (document dans le prompt) et la boucle
+  avec outil de lecture, sur le même jeu.
+- v2 : sortie structurée et notation par action, pour vérifier qu'un
+  responsable est rattaché à la bonne action (aujourd'hui, les mots-clés ne
+  le vérifient pas).
 - Run de référence complet sur le jeu d'évaluation, une fois `--limite 3`
   passé sans erreur.
 - Comparer la réflexion `off` et `low` sur le jeu d'évaluation du projet :
@@ -132,9 +158,9 @@ uv run --env-file .env python scripts/evaluate.py --limite 3
 Sur le serveur (rootless) ou après import :
 
 ```bash
-docker compose run --rm agent-modele pytest
-docker compose run --rm agent-modele ruff check .
-docker compose run --rm agent-modele python scripts/evaluate.py --limite 3
+docker compose run --rm agent-synthese pytest
+docker compose run --rm agent-synthese ruff check .
+docker compose run --rm agent-synthese python scripts/evaluate.py --limite 3
 ```
 
 Aucun test n'appelle le LLM. Les scénarios d'agent sont rejoués par
