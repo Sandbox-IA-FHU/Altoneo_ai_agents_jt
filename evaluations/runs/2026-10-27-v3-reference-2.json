@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-27",
+  "modele": {
+    "nom_expose": "altoneo-llm",
+    "modele_reel": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
+  },
+  "prompt": "prompts/agent_v3.md",
+  "jeu": "evaluations/jeux/taches_synthese.jsonl",
+  "nb_cas": 30,
+  "parametres": {
+    "max_iterations": 8,
+    "max_output_tokens": 4096,
+    "reflexion": "low",
+    "garder_reflexion": false,
+    "approbation": "refus"
+  },
+  "resultats": {
+    "tache_reussie": 0.867,
+    "outil_interdit_appele": 0.0,
+    "limite_iterations_atteinte": 0.0,
+    "dans_le_budget_etapes": 1.0,
+    "etapes_medianes": 2.0,
+    "etapes_max": 2.0,
+    "jetons_entree": 116147,
+    "jetons_sortie": 27770,
+    "jetons_par_tache": 4797,
+    "latence_mediane_s": 9.909,
+    "latence_p95_s": 17.38,
+    "par_type": {
+      "nominal": {
+        "nb_cas": 12,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0
+      },
+      "difficile": {
+        "nb_cas": 9,
+        "tache_reussie": 0.778,
+        "outil_interdit_appele": 0.0
+      },
+      "refus": {
+        "nb_cas": 9,
+        "tache_reussie": 0.778,
+        "outil_interdit_appele": 0.0
+      }
+    }
+  },
+  "commentaire": "Second run identique au run de référence v3 (même prompt, jeu, modèle, révision) pour mesurer la stabilité : 26/30 (nominal 12/12, difficile 7/9, refus 7/9), 0 outil interdit, 0 plafond, 2 tours par cas. Trois cas basculent par rapport au run 1 (s-06, s-30 vers l'échec, s-20 vers la réussite), soit 10 points de variation à configuration identique. Les deux échecs refus ne sont pas des inventions (relus à la main) : s-06 met « non daté » à « pour janvier », s-30 range l'action sans responsable en point ouvert. s-17 échoue sur la même date fausse aux deux runs (5 décembre au lieu du 4)."
+}
