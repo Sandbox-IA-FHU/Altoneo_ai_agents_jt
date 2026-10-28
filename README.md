@@ -6,9 +6,8 @@
 > de compte rendu (résumé, décisions, actions qui/quoi/quand, points ouverts)
 > sans jamais attribuer un responsable ou une échéance absents du texte
 > source ?
-> **Verdict** : pas encore. Au 2026-10-27, le prompt v3 ne tient pas le
-> seuil de façon stable : 9/9 puis 7/9 sur les cas `refus`, en deux runs
-> identiques.
+> **Verdict** : pas encore. Au 2026-10-28, le prompt v3 ne tient pas le
+> seuil v2 : des inventions de date dans 2 runs sur 4.
 
 Projet dérivé du modèle d'agent à outils. À partir d'une transcription ou d'un
 document, l'agent produit un **brouillon** : il ne l'envoie pas, ne l'écrit
@@ -381,6 +380,30 @@ modèle, même révision, réflexion `low`) :
 **La v3 ne tient pas le seuil de façon stable.** Fichiers de run :
 `evaluations/runs/2026-10-27-v3-reference.json` et
 `evaluations/runs/2026-10-27-v3-reference-2.json`.
+
+### Seuil v2, mesuré le 2026-10-28 : la v3 ne le tient pas
+
+Quatre runs v3 identiques (même prompt, même modèle, même révision,
+réflexion `low`), **renotés hors LLM** avec la notation par action et le jeu
+corrigé (s-18, s-19 : voir plus bas). Les brouillons ont été gardés pendant
+la session de mesure, hors du dépôt ; les fichiers de run portent, eux, la
+notation de leur date.
+
+- **Run de référence (27/10)** : 27/30 — nominal 12/12, difficile 6/9,
+  refus 9/9. **2 cas d'invention** : s-17 et s-23, dates relatives mal
+  calculées. 1 format non conforme (s-20).
+- **Second run de référence (27/10)** : 26/30 — nominal 12/12, difficile
+  7/9, refus 7/9. **1 cas d'invention** : s-17, date relative mal calculée.
+- **Run 1 notation par action (28/10)** : 30/30 — nominal 12/12, difficile
+  9/9, refus 9/9. 0 invention.
+- **Run 2 notation par action (28/10)** : 28/30 — nominal 12/12, difficile
+  8/9, refus 8/9. 0 invention.
+
+Outil interdit appelé : 0 dans les quatre runs. Plafond d'itérations : 0.
+Deux tours par cas.
+
+**La v3 ne tient pas le seuil v2 : des inventions de date dans 2 runs sur
+4.** Le critère doit tenir sur chaque run.
 
 ### Corrections du corrigé
 
