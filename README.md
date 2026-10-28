@@ -382,6 +382,26 @@ modèle, même révision, réflexion `low`) :
 `evaluations/runs/2026-10-27-v3-reference.json` et
 `evaluations/runs/2026-10-27-v3-reference-2.json`.
 
+### Corrections du corrigé
+
+Le jeu se corrige quand la lecture des brouillons montre qu'il note mal, pas
+quand un score déplaît. Chaque correction est datée, justifiée, et faite dans
+`scripts/generate_synthesis_set.py`.
+
+- **2026-10-27, s-06** — « réserver la grande salle pour janvier » attendait
+  « non daté », alors que s-02 attend la période de « pour la semaine du
+  30 novembre », de même structure. La règle fixée pour s-02 s'applique :
+  une période donnée pour l'action vaut échéance.
+- **2026-10-28, s-18** — l'action de Yuki n'avait que l'ancre « formation ».
+  Un brouillon écrivant « Former tous les conseillers », avec le bon
+  responsable et la bonne date, était pris pour une action inattendue, donc
+  pour une invention. Ancres : « formation » et « former ».
+- **2026-10-28, s-19** — le pilotage confié à Bertille, décidé en séance, est
+  rangé dans les décisions par les deux runs de notation par action, avec la
+  bonne personne et la bonne date ; le jeu l'exigeait en action. Il devient
+  facultatif, mais il est contrôlé (responsable et échéance) quand il figure
+  dans les actions : le critère d'invention n'est pas assoupli.
+
 ---
 
 ## L'import en production

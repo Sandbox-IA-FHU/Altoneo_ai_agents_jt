@@ -56,9 +56,16 @@ Il sépare deux choses :
 Une ligne hors format est **illisible** : le cas échoue et la ligne est
 comptée dans `format_non_conforme`, pas comme une invention.
 
-Deux actions sont **facultatives** (s-14 et s-18) : collectives ou sans
-responsable, un brouillon peut les rapporter ou les laisser dans les
-décisions. Seule une personne qui leur serait attribuée y est relevée.
+Trois actions sont **facultatives** : un brouillon peut les rapporter ou les
+laisser dans les décisions.
+
+- s-14 et s-18 : collectives ou sans responsable. Seule une personne qui leur
+  serait attribuée y est relevée.
+- s-19 : le pilotage confié en séance. Si le brouillon le met dans les
+  actions, le responsable et l'échéance y sont contrôlés comme ailleurs.
+
+Les corrections apportées au jeu après coup sont listées, datées et
+justifiées dans le README, section « Corrections du corrigé ».
 
 Les dates calculées (« demain », « pour le 20 », « jeudi en huit ») sont
 écrites action par action dans le générateur, y compris pour les actions qui

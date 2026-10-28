@@ -129,9 +129,13 @@ def buildCases() -> list[SynthesisCase]:
     """Les 30 cas du jeu, dans l'ordre de leur identifiant."""
     na, nd = UNASSIGNED, UNDATED
 
-    def act(anchors: str, who: str, when: str) -> ExpectedAction:
+    def act(
+        anchors: str, who: str, when: str, *, optional: bool = False
+    ) -> ExpectedAction:
         """Une action attendue ; les ancres sont séparées par « | »."""
-        return ExpectedAction(anchors=tuple(anchors.split("|")), who=who, when=when)
+        return ExpectedAction(
+            anchors=tuple(anchors.split("|")), who=who, when=when, optional=optional
+        )
 
     def optional(anchors: str) -> ExpectedAction:
         return ExpectedAction(
@@ -219,7 +223,10 @@ def buildCases() -> list[SynthesisCase]:
         ),
         "s-18": (
             act("groupe de travail|conclusion|courriel", "Sacha Renaud", "17 décembre"),
-            act("formation", "Yuki Fontaine", "9 décembre"),
+            # Correction du 2026-10-28 : « Former tous les conseillers » ne
+            # contient pas « formation » ; sans « former », une ligne juste
+            # était prise pour une action inattendue, donc une invention.
+            act("formation|former", "Yuki Fontaine", "9 décembre"),
             act("script", "Edgar Pelletier", "18 décembre"),
             # « sera remontée au comité informatique », sans responsable.
             optional("comite informatique|ecran"),
@@ -228,7 +235,10 @@ def buildCases() -> list[SynthesisCase]:
             # Maëlys d'abord : sa ligne contient aussi « pilotes ».
             act("previen|utilisateur", "Maëlys Dumont", "9 décembre"),
             act("notes|transm", "Karim Saïdi", "4 décembre"),
-            act("pilot", "Bertille Hamon", "14 décembre"),
+            # Correction du 2026-10-28 : décidé en séance, le pilotage peut
+            # être rangé dans les décisions sans rien perdre. Facultatif,
+            # mais contrôlé (responsable et date) s'il figure dans les actions.
+            act("pilot", "Bertille Hamon", "14 décembre", optional=True),
         ),
         "s-20": (
             act("fauteuil", "Astrid Poulain", "11 décembre"),
@@ -1393,7 +1403,7 @@ def _checkActions(case: SynthesisCase) -> list[str]:
             problems.append(f"{label} : aucune ancre dans la source")
         if any(anchor != normalizeText(anchor) for anchor in action.anchors):
             problems.append(f"{label} : ancre à écrire sans accent ni majuscule")
-        if action.optional:
+        if action.optional and not action.who:
             continue
         if action.who != UNASSIGNED and action.who not in case.people:
             problems.append(f"{label} : responsable {action.who!r} hors des personnes")
@@ -1465,8 +1475,13 @@ def printRecap(cases: list[SynthesisCase]) -> None:
         ]
         print(f"- {case.caseId} [{case.caseType}] {', '.join(flags) or '—'}")
         for action in case.actions:
-            if action.optional:
+            if action.optional and not action.who:
                 print(f"    facultative : {action.anchors[0]}")
+            elif action.optional:
+                print(
+                    f"    {action.who} — {action.anchors[0]} — {action.when}"
+                    " (facultative)"
+                )
             else:
                 print(f"    {action.who} — {action.anchors[0]} — {action.when}")
         if case.inventionKeywords():

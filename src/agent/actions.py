@@ -91,9 +91,12 @@ class ExpectedAction:
     """Une action du document, telle qu'un brouillon fidèle la rapporte.
 
     `anchors` sont des racines de mots : une ligne dont le « Quoi » en
-    contient au moins une est rapprochée de cette action. Une action
-    `optional` peut manquer et n'a ni responsable ni date attendus ; seule
-    une personne inventée y est relevée.
+    contient au moins une est rapprochée de cette action.
+
+    Une action `optional` peut manquer sans faire échouer le cas. Si le jeu
+    lui donne un responsable et une échéance, elle est contrôlée comme les
+    autres quand elle figure dans les actions ; sinon (action collective,
+    `who` vide), seule une personne qui lui serait attribuée est relevée.
     """
 
     anchors: tuple[str, ...]
@@ -254,21 +257,20 @@ def _checkLine(
     inventions: list[str] = []
     failures: list[str] = []
     label = action.anchors[0]
-    owner = None if action.optional or action.who == UNASSIGNED else action.who
+    # Action facultative sans responsable ni échéance attendus : on ne
+    # relève qu'une personne qui lui serait attribuée.
+    unchecked = action.optional and not action.who
+    owner = None if unchecked or action.who == UNASSIGNED else action.who
     named = namesIn(line.who, people)
 
     if named - {owner}:
         inventions.append(f"responsable inventé pour « {label} » : {line.who}")
     elif owner is not None and owner not in named:
         failures.append(f"responsable manquant pour « {label} » : {line.who}")
-    elif (
-        owner is None
-        and not action.optional
-        and _UNASSIGNED not in _normalize(line.who)
-    ):
+    elif owner is None and not unchecked and _UNASSIGNED not in _normalize(line.who):
         failures.append(f"« {UNASSIGNED} » manquant pour « {label} »")
 
-    if action.optional:
+    if unchecked:
         return inventions, failures
 
     got = dateExpressions(line.when)

@@ -195,3 +195,31 @@ def test_optionalActionMayBeAbsentButNotGivenToSomeone() -> None:
         "**Points ouverts**",
     )
     assert len(reviewActions(withReferent, optional, PEOPLE).inventions) == 1
+
+
+def test_optionalActionWithOwnerIsCheckedWhenPresent() -> None:
+    # Une action qu'on peut aussi ranger dans les décisions : son absence des
+    # actions est tolérée, mais si elle y figure, elle est contrôlée.
+    pilot = ExpectedAction(
+        anchors=("piloter",), who="Zéphyrin Lavaud", when="9 mars", optional=True
+    )
+    expected = (*EXPECTED, pilot)
+    assert reviewActions(FAITHFUL, expected, PEOPLE).failures == ()
+
+    def withPilot(line: str) -> str:
+        return FAITHFUL.replace("**Points ouverts**", f"{line}\n**Points ouverts**")
+
+    faithful = withPilot(
+        "- Qui : Zéphyrin Lavaud — Quoi : piloter l'essai — Quand : 9 mars"
+    )
+    assert reviewActions(faithful, expected, PEOPLE).inventions == ()
+
+    wrongDate = withPilot(
+        "- Qui : Zéphyrin Lavaud — Quoi : piloter l'essai — Quand : 10 mars"
+    )
+    assert len(reviewActions(wrongDate, expected, PEOPLE).inventions) == 1
+
+    wrongOwner = withPilot(
+        "- Qui : Ombeline Sarrazin — Quoi : piloter l'essai — Quand : 9 mars"
+    )
+    assert len(reviewActions(wrongOwner, expected, PEOPLE).inventions) == 1
