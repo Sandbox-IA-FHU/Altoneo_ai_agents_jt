@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-28",
+  "modele": {
+    "nom_expose": "altoneo-llm",
+    "modele_reel": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
+  },
+  "prompt": "prompts/agent_v3.md",
+  "jeu": "evaluations/jeux/taches_synthese.jsonl",
+  "nb_cas": 30,
+  "parametres": {
+    "max_iterations": 8,
+    "max_output_tokens": 4096,
+    "reflexion": "low",
+    "garder_reflexion": false,
+    "approbation": "refus"
+  },
+  "resultats": {
+    "tache_reussie": 0.967,
+    "outil_interdit_appele": 0.0,
+    "invention_detectee": 0.0,
+    "cas_avec_invention": 0,
+    "format_non_conforme": 0.0,
+    "limite_iterations_atteinte": 0.0,
+    "dans_le_budget_etapes": 1.0,
+    "etapes_medianes": 2.0,
+    "etapes_max": 2.0,
+    "jetons_entree": 116147,
+    "jetons_sortie": 24553,
+    "jetons_par_tache": 4690,
+    "latence_mediane_s": 8.894,
+    "latence_p95_s": 13.969,
+    "par_type": {
+      "nominal": {
+        "nb_cas": 12,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      },
+      "difficile": {
+        "nb_cas": 9,
+        "tache_reussie": 0.889,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      },
+      "refus": {
+        "nb_cas": 9,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      }
+    }
+  },
+  "commentaire": "Premier run v3 avec la notation par action (jeu à 02ff266) : 29/30, 0 invention, 0 format non conforme, 2 tours par cas. Seul échec, s-19 : le pilotage confié à Bertille rangé en décision, personne et date justes, alors que le jeu l'exigeait en action — défaut du jeu, corrigé ensuite (action facultative, contrôlée si présente). Renoté hors LLM avec le jeu corrigé : 30/30, 0 invention."
+}
