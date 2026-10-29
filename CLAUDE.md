@@ -127,19 +127,60 @@ plus capable mais moins lisible est une régression.
   0 outil interdit, 2 tours par cas. Deux des trois échecs sont des dates
   relatives mal calculées. Second run identique : 26/30, refus 7/9 — la v3
   ne tient pas le seuil v1 de façon stable. Seuil v2 adopté le même jour.
+- 2026-10-28 — notation par action et jeu complété. Deux runs v3 identiques
+  (`evaluations/runs/2026-10-28-v3-notation2-run1.json`, `-run2.json`) :
+  29/30 puis 26/30 tels que mesurés. Deux défauts du corrigé relevés en
+  lisant les brouillons et corrigés : s-18 (ancre « former » manquante, une
+  ligne juste comptée comme invention) et s-19 (pilotage rangé en décision,
+  action rendue facultative mais contrôlée si présente). Les quatre runs v3
+  renotés hors LLM : 27, 26, 30 et 28 sur 30, avec 2, 1, 0 et 0 cas
+  d'invention, toutes des dates relatives mal calculées. **La v3 ne tient
+  pas le seuil v2.**
 
 ## À travailler
 
 Dans cet ordre, chaque configuration mesurée sur **au moins deux runs
 identiques** :
 
-1. Notation par action et jeu complété (actions attendues, inventions
-   séparées de la prudence), puis les deux runs v3 relancés avec cette
-   notation : c'est la référence de la v4.
-2. v4 : fournir au modèle un calendrier calculé par le code à partir de la
-   date de la réunion (jours de la semaine et dates des deux semaines
-   suivantes), plutôt que de le laisser compter les jours. Aux runs v3,
-   s-17 et s-23 échouent sur ce seul point.
+1. ~~Notation par action et jeu complété, puis les deux runs v3 relancés
+   avec cette notation.~~ **Terminé le 2026-10-28.** La référence de la v4
+   est faite des quatre runs v3 renotés (voir « Où en est-on » et le README).
+2. **v4 : calendrier calculé par le code.** Plan arrêté, **pas encore codé** :
+   on attend le comité de projet du 2026-10-30 pour les deux questions
+   ouvertes ci-dessous.
+   - **Ce qui change, et rien d'autre** : le résultat de `readDocument`
+     contient, après le texte du document, un calendrier calculé par le code
+     à partir de la date de la réunion lue dans la première ligne du
+     document — le jour de la réunion et les 14 jours suivants, soit
+     15 lignes, chacune avec le jour de la semaine, la date et l'année. Sans
+     date trouvée, une ligne le dit, aucun calendrier n'est deviné. Le
+     calendrier liste des jours ; il n'interprète aucune expression.
+   - **Ce qui ne change pas** : le prompt v3, mot pour mot (pas de nouveau
+     fichier de prompt : la v4 est la configuration « prompt v3 +
+     calendrier »), la description de `readDocument`, le jeu, la notation,
+     le modèle, la réflexion, le plafond.
+   - **Option `--calendrier`** dans `evaluate.py` et `run_agent.py`,
+     désactivée par défaut tant que le gain n'est pas mesuré, et
+     `parametres.calendrier` consigné dans le fichier de run. Sans l'option,
+     le résultat de l'outil reste identique octet pour octet.
+   - **Tests** : calendrier juste (jours de la semaine, passage de mois),
+     absence de date signalée sans calendrier inventé, résultat inchangé
+     sans l'option, texte du document intact et calendrier placé après lui.
+   - **Mesure** : deux runs complets avec `--calendrier` (au plus 480 appels
+     au LLM partagé), comparés aux quatre runs v3 renotés.
+   - **Critère de décision** : le calendrier est retenu si le seuil v2 tient
+     sur chacun des deux runs — 0 invention, au moins 26/30, au plus 1
+     plafond. Suivi cas par cas des six cas à date calculée : s-03, s-17,
+     s-19, s-20, s-21, s-23.
+   - **Questions ouvertes, à trancher avant de coder** :
+     1. Le calendrier ajoute forcément des jetons d'entrée, alors que le
+        seuil v2 dit de ne pas dégrader les jetons par tâche (4 843 au run
+        de référence). Quel surcoût, mesuré dans `usage` après le premier
+        run, est acceptable si les inventions de date disparaissent ?
+     2. Faut-il prévenir le modèle de l'existence du calendrier ? Proposé :
+        non pour cette mesure, un seul paramètre changé. Si le calendrier
+        est ignoré, une phrase dans le prompt serait la mesure suivante
+        (prompt v4, deux nouveaux runs).
 3. Comparer l'appel unique sans outil (document dans le prompt) et la boucle
    avec outil de lecture, sur le même jeu.
 
