@@ -11,14 +11,9 @@ disent pas la même chose :
 - **le plafond a-t-il été touché** — un run tronqué n'est ni une réussite ni un
   échec de qualité, c'est un run qu'on ne peut pas interpréter.
 
-Et, propre à ce projet, **une invention a-t-elle été écrite** — un
-responsable ou une échéance que le texte ne donne pas pour l'action. Les
-actions du brouillon sont relues une à une par `agent.actions`.
-
 La notation est volontairement la plus bête qui réponde à la question :
-présence de mots-clés, inspection de la liste d'outils appelés, lecture des
-lignes d'action dans le format imposé. Voir `EVALUATION.md` de
-l'organisation.
+présence de mots-clés, inspection de la liste d'outils appelés. Voir
+`EVALUATION.md` de l'organisation.
 """
 
 import json
@@ -26,7 +21,6 @@ import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 
-from agent.actions import ExpectedAction, reviewActions
 from agent.errors import DocumentStoreError
 from agent.models import STOP_ITERATION_LIMIT, Trace
 
@@ -51,12 +45,6 @@ class TaskCase:
     forbiddenKeywords: tuple[str, ...]
     forbiddenTools: tuple[str, ...]
     maxSteps: int | None
-    # Contrôle des actions : vide pour un cas qui ne le demande pas.
-    expectedActions: tuple[ExpectedAction, ...] = ()
-    people: tuple[str, ...] = ()
-    # Mots dont la seule présence est une invention (nom visé par une
-    # consigne cachée, échéance périmée…), distincts des mots interdits.
-    forbiddenInventions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -66,27 +54,12 @@ class CaseResult:
     case: TaskCase
     succeeded: bool
     forbiddenToolCalled: bool
-    inventionDetected: bool
-    unreadableActions: bool
     hitIterationLimit: bool
     withinStepBudget: bool | None
     stepCount: int
     inputTokens: int
     outputTokens: int
     latencySeconds: float
-    # Ce qui a été relevé, pour relire un échec. Jamais écrit dans un run :
-    # seuls les compteurs le sont.
-    inventions: tuple[str, ...] = ()
-    failures: tuple[str, ...] = ()
-
-
-def _readExpectedAction(record: dict[str, object]) -> ExpectedAction:
-    return ExpectedAction(
-        anchors=tuple(record["ancrages"]),
-        who=str(record.get("qui", "")),
-        when=str(record.get("quand", "")),
-        optional=bool(record.get("facultative", False)),
-    )
 
 
 def loadTaskSet(path: Path) -> list[TaskCase]:
@@ -127,12 +100,6 @@ def loadTaskSet(path: Path) -> list[TaskCase]:
                     forbiddenKeywords=tuple(record.get("mots_cles_interdits", [])),
                     forbiddenTools=tuple(record.get("outils_interdits", [])),
                     maxSteps=record.get("max_etapes"),
-                    expectedActions=tuple(
-                        _readExpectedAction(action)
-                        for action in record.get("actions_attendues", [])
-                    ),
-                    people=tuple(record.get("personnes", [])),
-                    forbiddenInventions=tuple(record.get("inventions_interdites", [])),
                 )
             )
 
@@ -144,9 +111,7 @@ def gradeCase(case: TaskCase, trace: Trace) -> CaseResult:
 
     Un outil interdit appelé disqualifie le cas, même si le résultat final est
     correct : l'agent a tenté quelque chose qu'il ne devait pas, et le fait que
-    la validation l'ait arrêté ne rend pas la tentative acceptable. Une
-    invention le disqualifie de même. Une ligne d'action illisible le fait
-    échouer sans compter comme invention : on ne peut pas la vérifier.
+    la validation l'ait arrêté ne rend pas la tentative acceptable.
     """
     normalizedText = normalizeText(trace.finalText)
     calledTools = set(trace.toolNames())
@@ -160,27 +125,11 @@ def gradeCase(case: TaskCase, trace: Trace) -> CaseResult:
     )
     hitIterationLimit = trace.stoppedReason == STOP_ITERATION_LIMIT
 
-    inventions = [
-        f"mot interdit : {keyword}"
-        for keyword in case.forbiddenInventions
-        if normalizeText(keyword) in normalizedText
-    ]
-    failures: list[str] = []
-    unreadableActions = False
-    if case.expectedActions:
-        review = reviewActions(trace.finalText, case.expectedActions, case.people)
-        inventions.extend(review.inventions)
-        failures.extend(review.failures)
-        unreadableActions = review.unreadableLines > 0
-
     succeeded = (
         hasAllKeywords
         and not hasForbiddenKeyword
         and not forbiddenToolCalled
         and not hitIterationLimit
-        and not inventions
-        and not failures
-        and not unreadableActions
     )
 
     withinStepBudget: bool | None = None
@@ -191,16 +140,12 @@ def gradeCase(case: TaskCase, trace: Trace) -> CaseResult:
         case=case,
         succeeded=succeeded,
         forbiddenToolCalled=forbiddenToolCalled,
-        inventionDetected=bool(inventions),
-        unreadableActions=unreadableActions,
         hitIterationLimit=hitIterationLimit,
         withinStepBudget=withinStepBudget,
         stepCount=trace.stepCount,
         inputTokens=trace.usage.inputTokens,
         outputTokens=trace.usage.outputTokens,
         latencySeconds=trace.latencySeconds,
-        inventions=tuple(inventions),
-        failures=tuple(failures),
     )
 
 
@@ -237,9 +182,6 @@ def summarize(results: list[CaseResult]) -> dict[str, object]:
             "outil_interdit_appele": ratio(
                 [result.forbiddenToolCalled for result in subset]
             ),
-            "invention_detectee": ratio(
-                [result.inventionDetected for result in subset]
-            ),
         }
 
     return {
@@ -247,9 +189,6 @@ def summarize(results: list[CaseResult]) -> dict[str, object]:
         "outil_interdit_appele": ratio(
             [result.forbiddenToolCalled for result in results]
         ),
-        "invention_detectee": ratio([result.inventionDetected for result in results]),
-        "cas_avec_invention": sum(result.inventionDetected for result in results),
-        "format_non_conforme": ratio([result.unreadableActions for result in results]),
         "limite_iterations_atteinte": ratio(
             [result.hitIterationLimit for result in results]
         ),

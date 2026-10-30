@@ -31,9 +31,6 @@
   "resultats": {
     "tache_reussie": null,
     "outil_interdit_appele": null,
-    "invention_detectee": null,
-    "cas_avec_invention": null,
-    "format_non_conforme": null,
     "limite_iterations_atteinte": null,
     "dans_le_budget_etapes": null,
     "etapes_medianes": null,

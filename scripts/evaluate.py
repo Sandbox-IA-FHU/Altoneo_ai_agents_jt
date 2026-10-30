@@ -1,7 +1,8 @@
 """Lance l'évaluation de l'agent et écrit un fichier de run daté.
 
-    uv run --env-file .env python scripts/evaluate.py --limite 3
-    uv run --env-file .env python scripts/evaluate.py --etiquette prompt-v1
+    uv run --env-file .env python scripts/evaluate.py \
+        --prompt prompts/<prompt>.md --jeu evaluations/jeux/<taches>.jsonl \
+        --documents evaluations/jeux/<documents>.jsonl --limite 3
 
 Le LLM est partagé entre plusieurs projets : un run complet occupe le serveur
 pour tout le monde. Toujours commencer par `--limite 3`.
@@ -41,17 +42,15 @@ from agent.loop import MAX_ITERATIONS, runAgent
 from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
-DEFAULT_DOCUMENTS = Path("evaluations/jeux/documents_synthese.jsonl")
-DEFAULT_TASK_SET = Path("evaluations/jeux/taches_synthese.jsonl")
-DEFAULT_PROMPT = Path("prompts/agent_v3.md")
 RUNS_DIR = Path("evaluations/runs")
 
 
 def buildParser() -> argparse.ArgumentParser:
     """Décrit les arguments de la ligne de commande."""
     parser = argparse.ArgumentParser(description="Évalue l'agent.")
-    parser.add_argument("--documents", type=Path, default=DEFAULT_DOCUMENTS)
-    parser.add_argument("--jeu", type=Path, default=DEFAULT_TASK_SET)
+    parser.add_argument("--prompt", type=Path, required=True)
+    parser.add_argument("--documents", type=Path, required=True)
+    parser.add_argument("--jeu", type=Path, required=True)
     parser.add_argument(
         "--etiquette", default="run", help="Suffixe du nom de fichier de run."
     )
@@ -128,13 +127,17 @@ def main() -> int:
     except ModelCallError as error:
         print(f"Modèle : {error}", file=sys.stderr)
         return 1
-    systemPrompt = DEFAULT_PROMPT.read_text(encoding="utf-8")
+    try:
+        systemPrompt = args.prompt.read_text(encoding="utf-8")
+    except OSError as error:
+        print(f"Prompt : {error}", file=sys.stderr)
+        return 1
 
     print(
         f"{len(cases)} cas, modèle {config.model} ({servedModel}), "
         f"réflexion {args.reflexion} (gardée dans l'historique : "
         f"{'oui' if args.garderReflexion else 'non'}), "
-        f"prompt {DEFAULT_PROMPT.name}."
+        f"prompt {args.prompt.name}."
     )
     print(
         f"Jusqu'à {args.maxIterations * len(cases)} appels au LLM partagé. "
@@ -163,10 +166,6 @@ def main() -> int:
         flags = []
         if result.forbiddenToolCalled:
             flags.append("OUTIL INTERDIT")
-        if result.inventionDetected:
-            flags.append("INVENTION")
-        if result.unreadableActions:
-            flags.append("FORMAT")
         if result.hitIterationLimit:
             flags.append("PLAFOND")
         print(
@@ -183,7 +182,7 @@ def main() -> int:
             "modele_reel": servedModel,
             "revision": config.modelRevision,
         },
-        "prompt": f"prompts/{DEFAULT_PROMPT.name}",
+        "prompt": str(args.prompt).replace("\\", "/"),
         "jeu": str(args.jeu).replace("\\", "/"),
         "nb_cas": len(results),
         "parametres": {
@@ -206,11 +205,6 @@ def main() -> int:
     print()
     print(f"Tâches réussies       : {summary['tache_reussie']}")
     print(f"Outil interdit appelé : {summary['outil_interdit_appele']}")
-    print(
-        f"Invention détectée    : {summary['invention_detectee']} "
-        f"({summary['cas_avec_invention']} cas)"
-    )
-    print(f"Format non conforme   : {summary['format_non_conforme']}")
     print(f"Plafond atteint       : {summary['limite_iterations_atteinte']}")
     print(
         f"Étapes médianes / max : {summary['etapes_medianes']} / "

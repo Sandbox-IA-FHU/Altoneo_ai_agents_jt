@@ -1,9 +1,9 @@
 """Fait tourner l'agent sur une tâche, en ligne de commande.
 
-    uv run --env-file .env python scripts/run_agent.py "<tâche>"
+    uv run --env-file .env python scripts/run_agent.py "<tâche>" \
+        --prompt prompts/<prompt>.md --documents evaluations/jeux/<documents>.jsonl
 
-La tâche nomme le document à résumer, par exemple : « Rédige le brouillon de
-compte rendu du document « <nom> ». »
+La tâche nomme le document à lire, tel qu'il est nommé dans le magasin.
 
 Par défaut, toute action sensible est **refusée** sans rien demander. Pour être
 interrogé à la place, mettre `APPROBATION=console` dans `.env` ou passer
@@ -28,18 +28,18 @@ from agent.models import STOP_ITERATION_LIMIT
 from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
-DEFAULT_DOCUMENTS = Path("evaluations/jeux/documents_synthese.jsonl")
-DEFAULT_PROMPT = Path("prompts/agent_v3.md")
-
 
 def buildParser() -> argparse.ArgumentParser:
     """Décrit les arguments de la ligne de commande."""
     parser = argparse.ArgumentParser(description="Fait tourner l'agent.")
     parser.add_argument("tache", help="La tâche, entre guillemets.")
     parser.add_argument(
+        "--prompt", type=Path, required=True, help="Prompt système (fichier)."
+    )
+    parser.add_argument(
         "--documents",
         type=Path,
-        default=DEFAULT_DOCUMENTS,
+        required=True,
         help="Magasin de documents JSONL.",
     )
     parser.add_argument(
@@ -76,6 +76,12 @@ def main() -> int:
         print(f"Documents : {error}", file=sys.stderr)
         return 1
 
+    try:
+        systemPrompt = args.prompt.read_text(encoding="utf-8")
+    except OSError as error:
+        print(f"Prompt : {error}", file=sys.stderr)
+        return 1
+
     registry = ToolRegistry(buildToolbox(store))
     mode = args.approbation or config.approvalMode
     approval = ConsoleApproval() if mode == APPROVAL_CONSOLE else DenyAll()
@@ -95,7 +101,7 @@ def main() -> int:
             ),
             registry=registry,
             approval=approval,
-            systemPrompt=DEFAULT_PROMPT.read_text(encoding="utf-8"),
+            systemPrompt=systemPrompt,
             task=args.tache,
             maxIterations=args.maxIterations,
         )
