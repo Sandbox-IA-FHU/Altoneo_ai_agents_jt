@@ -1,5 +1,10 @@
 # agent-synthese — consignes Claude Code
 
+> **2026-10-30 — l'agent de synthèse est arrêté et retiré du dépôt ; le plan
+> v4 n'a plus d'objet.** Les sections de ce fichier qui parlent de la
+> synthèse (projet, jeu, runs, v4) sont périmées : en attendant leur mise à
+> jour (étape 3 de la réorganisation), se référer au README.
+
 Les règles communes de l'organisation (`CLAUDE.md` du dépôt `.github`)
 s'appliquent : français, aucune donnée réelle, aucune clé, aucun nom de
 client, `uv` uniquement, chiffres datés. Ce fichier les complète pour ce
