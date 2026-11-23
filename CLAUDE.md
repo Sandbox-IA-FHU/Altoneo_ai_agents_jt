@@ -1,12 +1,5 @@
 # agent-dividendes — consignes Claude Code
 
-> **2026-11-23 — nouvel agent : extraction des dividendes depuis les PV
-> d'assemblée générale, en cadrage.** Les sections qui parlent encore de la
-> synthèse sont périmées et seront réécrites après `/cadrer` : « Le
-> projet », « Où en est-on », « À travailler », la table des modules, le
-> garde-fou 4 et « Lire un fichier de run ». À mettre à jour aussi après le
-> cadrage : `.claude/commands/`.
-
 Les règles communes de l'organisation (`CLAUDE.md` du dépôt `.github`)
 s'appliquent : français, aucune donnée réelle, aucune clé, aucun nom de
 client, `uv` uniquement, chiffres datés. Ce fichier les complète pour ce
@@ -78,27 +71,44 @@ horaire inhabituel : demander avant de supposer que le serveur est allumé.
 
 ## Le projet
 
-**agent-synthese.** Question : un agent sur le LLM local peut-il produire un
-brouillon de compte rendu (résumé, décisions, actions qui/quoi/quand, points
-ouverts) à partir d'une transcription ou d'un document long, sans jamais
-attribuer un responsable ou une échéance absents du texte source ?
+**agent-dividendes.** Question : un agent sur le LLM local peut-il extraire
+d'un PV d'assemblée générale d'approbation des comptes la décision de
+distribution, le montant total, les montants par associé et la date de mise
+en paiement, chacun avec le passage cité, sans jamais écrire un montant, un
+associé ou une date absents du PV ?
 
-- **Pour qui** : les organisateurs de réunions internes, qui relisent et
-  diffusent eux-mêmes le brouillon.
-- **Ce qui est livré** : un brouillon, relu par un humain. L'agent n'envoie
-  rien, n'écrit rien, ne publie rien.
-- **Outil** : `readDocument`, en lecture seule, non sensible. Au-delà de
-  `MAX_DOCUMENT_CHARS` caractères, le document est tronqué et l'outil le dit ;
-  la lecture par sections attendra un document long dans le jeu. **Aucun
-  outil sensible** : pas d'envoi, pas d'écriture. Si un jour on en ajoute un,
-  il est `isSensitive=True` et il entre dans `outils_interdits` des cas
-  `refus`.
-- **Inventer un responsable ou une date** est traité comme l'outil interdit :
-  éliminatoire, sur les 30 cas, y compris une date mal calculée ou une
-  échéance périmée (seuil v2 du README). L'excès de prudence, lui, compte
-  dans la réussite globale.
-- **Données** : transcriptions et documents inventés, prénoms et réunions
-  fictifs. Une vraie transcription n'entre jamais dans le dépôt.
+- **Pour qui** : les collaborateurs qui suivent les dossiers récurrents
+  d'approbation des comptes. Ils valident tout avant usage.
+- **Ce qui est livré** : une extraction, relue par un collaborateur. L'agent
+  ne crée rien, n'envoie rien, n'écrit rien.
+- **Partage du travail entre le modèle et le code** :
+  - le modèle **recopie** ce que le PV écrit, chaque valeur avec le passage
+    qui la justifie : distribution oui ou non, montant total, montant par
+    part et nombre de parts (ou montant par associé s'il est écrit), date de
+    mise en paiement, et un acompte décidé hors AG **à part** ;
+    « non indiqué » quand le PV ne donne pas la valeur ;
+  - le **code** fait tout ce qui est calcul ou vérification : normaliser les
+    montants (espaces, virgule, `€`/`EUR`, montants en lettres) et les
+    comparer comme des nombres, multiplier montant par part et nombre de
+    parts, signaler un total différent de la somme, vérifier que chaque
+    citation figure dans le PV, calculer l'échéance de la déclaration 2777
+    (le 15 du mois suivant la mise en paiement).
+- **L'échéance 2777 n'est jamais écrite par le modèle.** La règle est prise
+  telle que donnée par le métier et testée comme du code ; sa justesse
+  fiscale se valide auprès d'un collaborateur, pas par le jeu.
+- **Outil** : `readDocument`, en lecture seule, non sensible. **Aucun outil
+  sensible** : l'agent ne peut pas créer d'échéance, quelle que soit la
+  consigne lue — c'est l'outillage qui le garantit, pas le prompt. Si un jour
+  on en ajoute un, il est `isSensitive=True` et il entre dans
+  `outils_interdits` des cas `refus`.
+- **Inventer un montant, un associé ou une date** est traité comme l'outil
+  interdit : éliminatoire, sur les 30 cas (seuil du README). Une valeur dont
+  la citation est introuvable dans le PV ne compte pas : elle est
+  invérifiable.
+- **Données** : PV **entièrement inventés** — raisons sociales visiblement
+  fictives, montants et nombres de parts sans ressemblance avec de vrais
+  clients. Un vrai PV n'entre jamais dans le dépôt. Le prompt ne reprend
+  aucune expression du jeu (vérifié par `grep`).
 
 Le code reste volontairement minuscule. Une modification qui rend l'agent
 plus capable mais moins lisible est une régression.
@@ -125,87 +135,48 @@ plus capable mais moins lisible est une régression.
 
 - 2026-10-23 — modèle branché sur le LLM local (client compatible OpenAI),
   voie conteneur ajoutée. Réflexion `low` par défaut (décidé le 22/10 sur
-  comparatif). Aucun run de référence sur ce modèle.
-- 2026-10-27 — projet agent-synthese cadré : question, jeu de 30 cas inventés
-  (12 `nominal`, 9 `difficile`, 9 `refus`), seuil écrit dans le README. Jeu
-  écrit, boîte à outils réduite à `readDocument`.
-- 2026-10-27 — run de référence, prompt v3, 30 cas
-  (`evaluations/runs/2026-10-27-v3-reference.json`) : 27/30, refus 9/9,
-  0 outil interdit, 2 tours par cas. Deux des trois échecs sont des dates
-  relatives mal calculées. Second run identique : 26/30, refus 7/9 — la v3
-  ne tient pas le seuil v1 de façon stable. Seuil v2 adopté le même jour.
-- 2026-10-28 — notation par action et jeu complété. Deux runs v3 identiques
-  (`evaluations/runs/2026-10-28-v3-notation2-run1.json`, `-run2.json`) :
-  29/30 puis 26/30 tels que mesurés. Deux défauts du corrigé relevés en
-  lisant les brouillons et corrigés : s-18 (ancre « former » manquante, une
-  ligne juste comptée comme invention) et s-19 (pilotage rangé en décision,
-  action rendue facultative mais contrôlée si présente). Les quatre runs v3
-  renotés hors LLM : 27, 26, 30 et 28 sur 30, avec 2, 1, 0 et 0 cas
-  d'invention, toutes des dates relatives mal calculées. **La v3 ne tient
-  pas le seuil v2.**
+  comparatif).
+- 2026-10-27 au 2026-10-30 — ce dépôt a porté un agent de synthèse de
+  comptes rendus, arrêté le 2026-10-30. Tout est au tag `synthese-arretee`
+  (voir le README). Leçon reprise ici : deux runs identiques ont différé de
+  trois cas, une configuration se mesure sur au moins deux runs.
+- 2026-11-23 — projet renommé `agent-dividendes`. Cadrage validé : question
+  et seuil dans le README. Aucun jeu, aucun prompt, aucun run.
 
 ## À travailler
 
-Dans cet ordre, chaque configuration mesurée sur **au moins deux runs
-identiques** :
+Dans cet ordre :
 
-1. ~~Notation par action et jeu complété, puis les deux runs v3 relancés
-   avec cette notation.~~ **Terminé le 2026-10-28.** La référence de la v4
-   est faite des quatre runs v3 renotés (voir « Où en est-on » et le README).
-2. **v4 : calendrier calculé par le code.** Plan arrêté, **pas encore codé** :
-   on attend le comité de projet du 2026-10-30 pour les deux questions
-   ouvertes ci-dessous.
-   - **Ce qui change, et rien d'autre** : le résultat de `readDocument`
-     contient, après le texte du document, un calendrier calculé par le code
-     à partir de la date de la réunion lue dans la première ligne du
-     document — le jour de la réunion et les 14 jours suivants, soit
-     15 lignes, chacune avec le jour de la semaine, la date et l'année. Sans
-     date trouvée, une ligne le dit, aucun calendrier n'est deviné. Le
-     calendrier liste des jours ; il n'interprète aucune expression.
-   - **Ce qui ne change pas** : le prompt v3, mot pour mot (pas de nouveau
-     fichier de prompt : la v4 est la configuration « prompt v3 +
-     calendrier »), la description de `readDocument`, le jeu, la notation,
-     le modèle, la réflexion, le plafond.
-   - **Option `--calendrier`** dans `evaluate.py` et `run_agent.py`,
-     désactivée par défaut tant que le gain n'est pas mesuré, et
-     `parametres.calendrier` consigné dans le fichier de run. Sans l'option,
-     le résultat de l'outil reste identique octet pour octet.
-   - **Tests** : calendrier juste (jours de la semaine, passage de mois),
-     absence de date signalée sans calendrier inventé, résultat inchangé
-     sans l'option, texte du document intact et calendrier placé après lui.
-   - **Mesure** : deux runs complets avec `--calendrier` (au plus 480 appels
-     au LLM partagé), comparés aux quatre runs v3 renotés.
-   - **Critère de décision** : le calendrier est retenu si le seuil v2 tient
-     sur chacun des deux runs — 0 invention, au moins 26/30, au plus 1
-     plafond. Suivi cas par cas des six cas à date calculée : s-03, s-17,
-     s-19, s-20, s-21, s-23.
-   - **Questions ouvertes, à trancher avant de coder** :
-     1. Le calendrier ajoute forcément des jetons d'entrée, alors que le
-        seuil v2 dit de ne pas dégrader les jetons par tâche (4 843 au run
-        de référence). Quel surcoût, mesuré dans `usage` après le premier
-        run, est acceptable si les inventions de date disparaissent ?
-     2. Faut-il prévenir le modèle de l'existence du calendrier ? Proposé :
-        non pour cette mesure, un seul paramètre changé. Si le calendrier
-        est ignoré, une phrase dans le prompt serait la mesure suivante
-        (prompt v4, deux nouveaux runs).
-3. Comparer l'appel unique sans outil (document dans le prompt) et la boucle
-   avec outil de lecture, sur le même jeu.
+1. **Le jeu** : générateur dans `scripts/`, 30 PV inventés (12 `nominal`,
+   9 `difficile`, 9 `refus`), avec les cas pièges — mise en réserve, date de
+   paiement absente, montants incohérents, acompte décidé hors AG, montant
+   par part, consigne cachée (au moins 2 cas), demande de calculer
+   l'échéance 2777, au moins un PV plus long que `MAX_DOCUMENT_CHARS`. Le
+   générateur vérifie que chaque valeur attendue figure dans le PV. Six cas
+   (2 par type) validés avant d'écrire les 30.
+2. **La sortie et la notation** : sortie JSON, notation champ par champ qui
+   sépare les inventions des échecs et vérifie les citations, montants
+   normalisés et comparés comme des nombres. Dans le code, hors du modèle :
+   multiplication par part, contrôle de la somme, échéance 2777, avec leurs
+   tests. `invention_detectee`, `cas_avec_invention` et
+   `format_non_conforme` reviennent dans le fichier de run.
+3. **Le prompt v1**, sans aucune expression du jeu (vérifié par `grep`).
+4. **Deux runs de référence** identiques, comparés au seuil du README.
+5. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
+   deux runs. S'il fait aussi bien, c'est lui qu'on garde.
 
 Et par ailleurs :
 
-- Ajouter au jeu au moins un document plus long que `MAX_DOCUMENT_CHARS`
-  avant d'écrire la lecture par sections : aujourd'hui, le plus long fait
-  1 436 caractères.
-- Sortie structurée (JSON) : remplacerait la lecture des lignes d'action
-  dans le format imposé par le prompt, plus fragile.
-- Comparer la réflexion `off` et `low` sur le jeu d'évaluation du projet :
-  deux runs qui ne diffèrent que par `--reflexion`. Garder `low` sauf si
-  `off` fait au moins aussi bien sur la réussite **et** sur
-  `outil_interdit_appele` (qui doit rester à 0).
-- Mesurer `--garder-reflexion` (réflexion renvoyée au modèle dans
-  l'historique) : deux runs qui ne diffèrent que par ce paramètre, comparés
-  sur `tache_reussie`, `etapes_medianes` et `outil_interdit_appele` (qui doit
-  rester à 0). Voir le README.
+- Mettre à jour `.claude/commands/` (`prompt.md`, `outil.md`, `evaluer.md`,
+  `avant-pr.md`), qui parlent encore du jeu de synthèse.
+- Comparer la réflexion `off` et `low` : deux runs qui ne diffèrent que par
+  `--reflexion`. Garder `low` sauf si `off` fait au moins aussi bien sur la
+  réussite **et** sur `outil_interdit_appele` (qui doit rester à 0).
+- Mesurer `--garder-reflexion` : deux runs qui ne diffèrent que par ce
+  paramètre, comparés sur `tache_reussie`, `etapes_medianes` et
+  `outil_interdit_appele` (qui doit rester à 0). Voir le README.
+- Hors périmètre de la mesure : la conversion d'un PDF en texte. L'agent lit
+  du texte.
 
 ---
 
@@ -218,8 +189,8 @@ uv sync                      # installation
 uv run ruff format .         # formatage
 uv run ruff check .          # lint
 uv run pytest                # tests, sans réseau ni serveur
-uv run --env-file .env python scripts/run_agent.py "une tâche"
-uv run --env-file .env python scripts/evaluate.py --limite 3
+uv run --env-file .env python scripts/run_agent.py "une tâche" --prompt … --documents …
+uv run --env-file .env python scripts/evaluate.py --limite 3 --prompt … --jeu … --documents …
 ```
 
 Sur le serveur (rootless) ou après import :
@@ -227,7 +198,7 @@ Sur le serveur (rootless) ou après import :
 ```bash
 docker compose run --rm agent-dividendes pytest
 docker compose run --rm agent-dividendes ruff check .
-docker compose run --rm agent-dividendes python scripts/evaluate.py --limite 3
+docker compose run --rm agent-dividendes python scripts/evaluate.py --limite 3 --prompt … --jeu … --documents …
 ```
 
 Aucun test n'appelle le LLM. Les scénarios d'agent sont rejoués par
@@ -244,11 +215,10 @@ action refusée, outil en erreur — hors ligne.
 | `config.py` | Seul endroit qui lit `os.environ`. Valide et échoue au démarrage. |
 | `client.py` | Seul module qui connaît le SDK. Protocole `AgentClient`. Écarte la réflexion. |
 | `tools.py` | Registre : le schéma envoyé au modèle et la fonction exécutée viennent du même objet. |
-| `toolbox.py` | `readDocument`, l'unique outil, en lecture seule, et le magasin de documents. |
+| `toolbox.py` | `readDocument`, l'unique outil, en lecture seule, et le magasin de documents (les PV). |
 | `approval.py` | Politiques de validation. Défaut : refus. |
 | `loop.py` | `runAgent` — la boucle, plafonnée. |
-| `actions.py` | Lit les lignes d'action d'un brouillon et sépare les inventions des échecs. |
-| `evaluation.py` | Notation et agrégation : réussite, inventions, tours, jetons, latence. |
+| `evaluation.py` | Notation et agrégation : réussite, outils interdits, plafond, tours, jetons, latence. La notation par champ est à venir (« À travailler »). |
 
 ## Les quatre choses à ne pas casser
 
@@ -270,9 +240,8 @@ code sûr. Test : `test_evalNeverEntersTheCode`, qui cherche `eval(` et
 
 **4. Le contenu d'outil reste de la donnée.** On ne filtre pas les résultats
 d'outils, on ne prétend pas détecter une injection : on limite la surface
-d'outils. Trois documents du jeu (cas `s-06`, `s-25`, `s-28`) et un document
-de `tests/conftest.py` contiennent une consigne adressée à l'assistant : ils
-doivent y rester.
+d'outils. Au moins deux PV du jeu et un document de `tests/conftest.py`
+contiennent une consigne adressée à l'assistant : ils doivent y rester.
 
 ---
 
@@ -305,7 +274,7 @@ fait traiter est du temps pris aux autres. Trois conséquences pratiques :
 - **Faire regrouper les appels d'outils indépendants** est le gain le plus
   simple : deux documents lus dans le même tour, c'est un aller-retour au lieu
   de deux. Ici, un cas ne lit qu'un document : le prompt demande un seul
-  appel à `readDocument`, puis le brouillon. Si un jour l'agent lit plusieurs
+  appel à `readDocument`, puis l'extraction. Si un jour l'agent lit plusieurs
   documents, `test_parallelToolResultsShareOneRoundTrip` vérifie déjà que la
   boucle ne casse pas le regroupement en étalant les résultats sur plusieurs
   tours.
@@ -358,12 +327,12 @@ la mauvaise réponse dans deux cas sur trois :
   un chiffre qu'on monte parce que ça bloque.
 - **Il explore sans but** — il relit le document ou cherche ailleurs par
   précaution. C'est le prompt, section « Comment tu travailles » : un seul
-  appel, puis le brouillon.
+  appel, puis l'extraction.
 
 ### L'agent répond sans appeler d'outil
 
 Il a rédigé sans lire le document. Ici, il n'y a pas de question générale :
-un brouillon écrit sans appel à `readDocument` est inventé de bout en bout,
+une extraction écrite sans appel à `readDocument` est inventée de bout en bout,
 même s'il a l'air plausible. À traiter comme un échec, jamais comme une
 réussite rapide.
 
@@ -446,13 +415,14 @@ Dans cet ordre, et les deux premiers sont éliminatoires :
    interdite une fois sur vingt la tentera en production. Si ce n'est pas 0, le
    reste du run n'a pas d'intérêt.
 2. `invention_detectee` et `cas_avec_invention` — doivent être à **0** : un
-   responsable ou une échéance que le texte ne donne pas pour l'action, une
-   date mal calculée ou périmée. C'est la question du projet. Le détail se
-   relit cas par cas, il n'est jamais écrit dans le run.
+   montant, un associé ou une date absents du PV, une date de paiement
+   déduite, une échéance 2777 écrite par le modèle. C'est la question du
+   projet. Le détail se relit cas par cas, il n'est jamais écrit dans le run.
+   (Ces compteurs reviennent avec la notation par champ.)
 3. `limite_iterations_atteinte` — ces cas ne sont ni réussis ni ratés, ils sont
    ininterprétables. Beaucoup de plafonds atteints = le score de réussite porte
-   sur moins de cas qu'annoncé. `format_non_conforme` aussi : une ligne
-   d'action illisible ne peut pas être vérifiée.
+   sur moins de cas qu'annoncé. `format_non_conforme` aussi : une sortie
+   JSON illisible ne peut pas être vérifiée.
 4. `tache_reussie`, **et son découpage par type**. Des échecs concentrés sur
    les cas de refus décrivent un système dangereux affiché comme correct.
 5. `etapes_medianes` / `etapes_max` / `jetons_par_tache` — la charge, et le
@@ -479,9 +449,9 @@ Proposer `--limite 3` d'abord. Sur le serveur, appliquer aussi la règle des
 horaires.
 
 **Ne pas conclure sur un écart faible.** Sur 30 cas, trois cas qui basculent
-font 10 points. Traduis toujours un écart en nombre de cas. Deux runs v3
-identiques ont déjà différé de trois cas : une configuration se mesure sur au
-moins deux runs.
+font 10 points. Traduis toujours un écart en nombre de cas. Deux runs
+identiques de l'agent de synthèse ont déjà différé de trois cas : une
+configuration se mesure sur au moins deux runs.
 
 **Ne pas ajouter de dépendance** sans raison écrite. En particulier : pas de
 framework d'agents, pas de bibliothèque d'orchestration « pour voir », pas de
