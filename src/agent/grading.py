@@ -46,7 +46,10 @@ _SPACES = re.compile(r"[\s  ]+")
 _DIGIT_SPACE = re.compile(r"(?<=\d)[   ](?=\d)")
 # Un montant en euros dans une remarque : « 42 000 euros », « 3,50 € »…
 _MONEY = re.compile(
-    r"\d[\d \u00a0\u202f]*(?:[,.]\d+)?\s*(?:euros?|€|EUR)\b", re.IGNORECASE
+    # Pas de limite de mot après « € » : ce n'est pas une lettre, « 3 € » en
+    # fin de phrase n'en a pas.
+    r"\d[\d \u00a0\u202f]*(?:[,.]\d+)?\s*(?:euros?\b|€|EUR\b)",
+    re.IGNORECASE,
 )
 _DISTRIBUTIONS = {"oui": True, "non": False, NOT_GIVEN: None}
 

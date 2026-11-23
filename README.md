@@ -384,6 +384,35 @@ remarques, deux cachent une consigne, un nomme un document introuvable.
 Le jeu de réserve **ne sert jamais à écrire ou retoucher un prompt** : voir
 `CLAUDE.md` et la commande `/prompt`.
 
+### Mesuré le 2026-11-23 sur la réserve : seuil non tenu, mesure à refaire
+
+Deux runs identiques du prompt v1 (`evaluations/runs/2026-11-23-v1-reserve.json`
+et `-reserve-2.json`) : 12/15 puis 12/15, 0 puis 1 cas d'invention, 0 outil
+interdit, 0 plafond. **Le seuil de la réserve ne tient pas tel que mesuré**,
+mais deux défauts de mesure ont été trouvés en relisant les sorties :
+
+- **L'agent ne lisait que 4 000 caractères.** La boucle coupait tout résultat
+  d'outil à 4 000 caractères, sans le signaler, après la coupe à
+  `MAX_DOCUMENT_CHARS` de `readDocument` : deux cas avaient leurs valeurs
+  au-delà. L'agent a signalé la troncature et n'a rien inventé.
+- **Les montants écrits avec « € » échappaient au contrôle des remarques.**
+  Avec le motif corrigé, appliqué aux sorties gardées, un même cas compte une
+  invention dans les deux runs : un calcul écrit dans les remarques.
+
+**Ce qui a été vérifié, et ce qui ne l'a pas été.**
+
+- Les runs commités n'ont pas été re-notés dans le dépôt : leurs fichiers
+  portent la notation de leur date.
+- La règle « € » corrigée a été vérifiée **hors du dépôt**, le 2026-11-23,
+  sur les sorties gardées pendant la session : aucun changement sur les
+  60 sorties des deux runs de référence du jeu principal ; dans la réserve,
+  r-11 devient une invention au premier run aussi.
+- **Tous ces runs** — l'essai `--limite 3`, l'essai sur trois cas `refus`,
+  les deux références du jeu principal et les deux runs de la réserve — ont
+  été faits avec la lecture coupée à 4 000 caractères, sans avis.
+- **Les nouveaux runs, faits après la correction de la lecture, feront
+  foi.**
+
 ### Mesuré le 2026-11-23 : le prompt v1 tient le seuil
 
 Deux runs identiques (même jeu, même modèle, même révision, réflexion `low`) :
@@ -415,7 +444,10 @@ ne font pas 60 observations indépendantes. Lors de ces runs, le contrôle
 d'invention ne couvrait les `remarques` que pour les valeurs interdites du
 cas ; depuis, les dates et les montants en euros des remarques sont
 contrôlés, et la notation porte sur la partie du PV que l'agent a lue.
-Re-notées ainsi hors run, les deux références donnent le même résultat.
+Le motif de cette règle ne voyait pas les montants écrits avec « € » ; il
+a été corrigé le 2026-11-23. Voir plus haut, « Mesuré le 2026-11-23 sur la
+réserve », pour ce que cela change et pour la lecture coupée à 4 000
+caractères, qui concerne aussi ces deux runs.
 
 ---
 

@@ -321,3 +321,22 @@ def test_distributionNotGivenIsRightWhenExpected() -> None:
     assert result.readable is True
     assert result.inventions == ()
     assert result.failures == ()
+
+
+@pytest.mark.parametrize(
+    "remark",
+    [
+        "Les montants s'élèvent à 37 000 € au lieu du total annoncé.",
+        "Soit 37 000 €.",
+        "Total recalculé (37 000 €) supérieur au dividende.",
+        "Total recalculé : 37 000 EUR.",
+        "Total recalculé : 37 000 euros.",
+    ],
+)
+def test_amountInventedInRemarksIsCaughtInEveryCurrencyForm(remark: str) -> None:
+    # Le symbole « € » n'est pas une lettre : un montant qui le porte en fin
+    # de phrase ou avant une parenthèse doit être vu comme les autres.
+    output = perfect("d-01")
+    output["remarques"] = [remark]
+
+    assert review("d-01", output).inventions
