@@ -149,7 +149,14 @@ plus capable mais moins lisible est une régression.
   (`scripts/generate_dividend_set.py`). Code hors modèle et notation par
   champ écrits ; le corrigé passe sa propre notation sur les 30 cas. Prompt
   v1 écrit (`prompts/agent_v1.md`) et description de `readDocument`
-  adaptée, avant tout run. Aucun run.
+  adaptée, avant tout run.
+- 2026-11-23 — deux runs de référence, prompt v1
+  (`evaluations/runs/2026-11-23-v1-reference.json`, `-reference-2.json`) :
+  30/30 puis 29/30, 0 invention, 0 outil interdit, 0 plafond, 2 tours par
+  cas, environ 4 950 jetons par tâche. **Le prompt v1 tient le seuil.** Seul
+  échec : d-28 au second run, JSON invalide (virgule de trop), contenu juste.
+  Réserves du README : troncature non testée, pas de jeu de réserve, jeu au
+  plafond.
 
 ## À travailler
 
@@ -162,20 +169,31 @@ Dans cet ordre :
 2. ~~**La sortie et la notation**~~ (fait le 2026-11-23) : sortie JSON,
    notation champ par champ qui sépare les inventions des échecs et vérifie
    les citations, montants normalisés et comparés comme des nombres. Dans le
-   code, hors du modèle :
-   multiplication par part, contrôle de la somme et du solde après acompte,
-   échéance 2777 par paiement, avec leurs tests. `invention_detectee`,
+   code, hors du modèle : multiplication par part, contrôle de la somme et
+   du solde après acompte, échéance 2777 par paiement, avec leurs tests. `invention_detectee`,
    `cas_avec_invention` et `format_non_conforme` reviennent dans le fichier
    de run.
 3. ~~**Le prompt v1**~~ (fait le 2026-11-23), sans aucune suite de quatre
    mots commune avec le jeu (`tests/test_prompt.py`, qui contrôle aussi la
    description de `readDocument`).
-4. **Deux runs de référence** identiques, comparés au seuil du README,
-   après un essai `--limite 3` puis un essai sur trois cas `refus`.
+4. ~~**Deux runs de référence**~~ (faits le 2026-11-23) : le prompt v1 tient
+   le seuil, voir « Où en est-on » et le README.
 5. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
-   deux runs. S'il fait aussi bien, c'est lui qu'on garde.
+   deux runs. S'il fait aussi bien, c'est lui qu'on garde. Attention : le jeu
+   est au plafond (30/30, 29/30), la comparaison ne peut montrer qu'une
+   dégradation ; un écart d'un cas reste dans le bruit.
 
 Et par ailleurs :
+
+- Les réserves des runs de référence, à traiter avant de conclure plus loin :
+  un **jeu de réserve**, écrit sans regarder le prompt, pour mesurer hors des
+  cas qui ont servi à l'écrire ; un **cas dont une valeur est après la
+  coupure** de `MAX_DOCUMENT_CHARS`, pour tester la troncature ; des cas plus
+  difficiles pour sortir du plafond ; un **contrôle d'invention dans les
+  `remarques`**, aujourd'hui limité aux valeurs interdites du cas.
+- Le format : une virgule de trop a suffi à faire échouer d-28. Mesurer la
+  sortie structurée imposée par le serveur, sur deux runs. Ne pas rendre
+  `readExtraction` tolérant sans nouveau run : ce serait changer la mesure.
 
 - Mettre à jour `.claude/commands/` (`prompt.md`, `outil.md`, `evaluer.md`,
   `avant-pr.md`), qui parlent encore du jeu de synthèse.
