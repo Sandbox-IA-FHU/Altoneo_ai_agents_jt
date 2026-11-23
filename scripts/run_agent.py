@@ -1,7 +1,6 @@
 """Fait tourner l'agent sur une tâche, en ligne de commande.
 
-    uv run --env-file .env python scripts/run_agent.py "<tâche>" \
-        --prompt prompts/<prompt>.md --documents evaluations/jeux/<documents>.jsonl
+    uv run --env-file .env python scripts/run_agent.py "<tâche>"
 
 La tâche nomme le document à lire, tel qu'il est nommé dans le magasin.
 
@@ -33,18 +32,21 @@ from agent.models import STOP_ITERATION_LIMIT
 from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
+DEFAULT_PROMPT = Path("prompts/agent_v1.md")
+DEFAULT_DOCUMENTS = Path("evaluations/jeux/pv_dividendes.jsonl")
+
 
 def buildParser() -> argparse.ArgumentParser:
     """Décrit les arguments de la ligne de commande."""
     parser = argparse.ArgumentParser(description="Fait tourner l'agent.")
     parser.add_argument("tache", help="La tâche, entre guillemets.")
     parser.add_argument(
-        "--prompt", type=Path, required=True, help="Prompt système (fichier)."
+        "--prompt", type=Path, default=DEFAULT_PROMPT, help="Prompt système."
     )
     parser.add_argument(
         "--documents",
         type=Path,
-        required=True,
+        default=DEFAULT_DOCUMENTS,
         help="Magasin de documents JSONL.",
     )
     parser.add_argument(

@@ -14,6 +14,7 @@ destiné au modèle, pour mesurer si elle l'aide à garder le fil.
 
 import json
 import logging
+import re
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -229,6 +230,21 @@ def _translateErrors() -> Iterator[None]:
         ) from error
 
 
+def publicModelName(declared: str) -> str:
+    """Le nom du modèle tel qu'il peut entrer dans un fichier de run commité.
+
+    Un serveur déclare parfois le chemin du modèle sur son disque : seul le
+    dernier élément est gardé, aucun chemin de machine n'entre dans le dépôt.
+    Un identifiant de la forme « organisation/modèle » est gardé tel quel.
+    """
+    looksLikePath = declared.startswith(("/", "./", "../", "~")) or bool(
+        re.match(r"^[A-Za-z]:[\\/]", declared)
+    )
+    if not looksLikePath and "\\" not in declared:
+        return declared
+    return re.split(r"[\\/]", declared.rstrip("/\\"))[-1]
+
+
 class OpenAICompatibleClient:
     """Implémentation réelle, pour le LLM local compatible OpenAI."""
 
@@ -297,7 +313,7 @@ class OpenAICompatibleClient:
             models = list(self._client.models.list())
         for served in models:
             if served.id == self.model:
-                return str(getattr(served, "root", None) or served.id)
+                return publicModelName(str(getattr(served, "root", None) or served.id))
         raise ModelCallError(
             f"Le serveur n'expose pas {self.model!r}. Vérifier LLM_MODEL."
         )

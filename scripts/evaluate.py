@@ -1,8 +1,7 @@
 """Lance l'évaluation de l'agent et écrit un fichier de run daté.
 
-    uv run --env-file .env python scripts/evaluate.py \
-        --prompt prompts/<prompt>.md --jeu evaluations/jeux/<taches>.jsonl \
-        --documents evaluations/jeux/<documents>.jsonl --limite 3
+    uv run --env-file .env python scripts/evaluate.py --limite 3
+    uv run --env-file .env python scripts/evaluate.py --etiquette v1-reference
 
 Le LLM est partagé entre plusieurs projets : un run complet occupe le serveur
 pour tout le monde. Toujours commencer par `--limite 3`.
@@ -37,20 +36,24 @@ from agent.client import (
 )
 from agent.config import loadConfig
 from agent.errors import ConfigError, DocumentStoreError, ModelCallError
-from agent.evaluation import gradeCase, loadTaskSet, summarize
+from agent.evaluation import gradeCase, loadTaskSet, repoPath, summarize
 from agent.loop import MAX_ITERATIONS, runAgent
 from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_PROMPT = Path("prompts/agent_v1.md")
+DEFAULT_DOCUMENTS = Path("evaluations/jeux/pv_dividendes.jsonl")
+DEFAULT_TASK_SET = Path("evaluations/jeux/taches_dividendes.jsonl")
 RUNS_DIR = Path("evaluations/runs")
 
 
 def buildParser() -> argparse.ArgumentParser:
     """Décrit les arguments de la ligne de commande."""
     parser = argparse.ArgumentParser(description="Évalue l'agent.")
-    parser.add_argument("--prompt", type=Path, required=True)
-    parser.add_argument("--documents", type=Path, required=True)
-    parser.add_argument("--jeu", type=Path, required=True)
+    parser.add_argument("--prompt", type=Path, default=DEFAULT_PROMPT)
+    parser.add_argument("--documents", type=Path, default=DEFAULT_DOCUMENTS)
+    parser.add_argument("--jeu", type=Path, default=DEFAULT_TASK_SET)
     parser.add_argument(
         "--etiquette", default="run", help="Suffixe du nom de fichier de run."
     )
@@ -188,8 +191,9 @@ def main() -> int:
             "modele_reel": servedModel,
             "revision": config.modelRevision,
         },
-        "prompt": str(args.prompt).replace("\\", "/"),
-        "jeu": str(args.jeu).replace("\\", "/"),
+        "prompt": repoPath(args.prompt, REPO_ROOT),
+        "jeu": repoPath(args.jeu, REPO_ROOT),
+        "documents": repoPath(args.documents, REPO_ROOT),
         "nb_cas": len(results),
         "parametres": {
             "max_iterations": args.maxIterations,

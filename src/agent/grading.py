@@ -239,7 +239,7 @@ def reviewExtraction(
         return ExtractionReview(False, tuple(grader.inventions), ())
 
     paid = expected["distribution"] == "oui"
-    if extraction.distribution != paid:
+    if extraction.distribution is None or extraction.distribution != paid:
         grader.failures.append(f"distribution : {'oui' if paid else 'non'} attendu")
     grader.amount("montant total", extraction.total, expected["montant_total"])
     grader.amount("montant par part", extraction.perPart, expected["montant_par_part"])

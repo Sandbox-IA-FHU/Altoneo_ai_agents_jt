@@ -15,6 +15,7 @@ from agent.client import (
     NO_REASONING_SAMPLING,
     REASONING_EFFORT,
     buildRequestOptions,
+    publicModelName,
     turnFromResponse,
 )
 from agent.errors import ModelCallError
@@ -161,3 +162,21 @@ def test_keptReasoningGoesBackToTheModelOnly(registry: ToolRegistry) -> None:
     assert SECRET_REASONING not in str(trace)
     assert SECRET_REASONING not in summarizeTrace(trace)
     assert SECRET_REASONING not in str(runSummary)
+
+
+@pytest.mark.parametrize(
+    ("declared", "expected"),
+    [
+        ("organisation/modele-test", "organisation/modele-test"),
+        ("modele-test", "modele-test"),
+        ("/srv/modeles/organisation/modele-test", "modele-test"),
+        ("/srv/modeles/modele-test/", "modele-test"),
+        ("./modeles/modele-test", "modele-test"),
+        ("~/modeles/modele-test", "modele-test"),
+        ("D:\\modeles\\modele-test", "modele-test"),
+    ],
+)
+def test_modelPathNeverReachesARunFile(declared: str, expected: str) -> None:
+    # Un fichier de run est commité : le chemin du modèle sur le disque du
+    # serveur n'y entre pas, seul son dernier élément.
+    assert publicModelName(declared) == expected

@@ -161,16 +161,13 @@ cp .env.example .env
 ```
 
 Renseignez `LLM_BASE_URL` et `LLM_MODEL_REVISION` (les deux valeurs sont
-fournies par Florian). Les scripts demandent le prompt et les données à
-utiliser : aucun prompt ni aucun jeu n'est présent tant qu'aucun agent n'est
-en cours.
+fournies par Florian). Par défaut, les scripts prennent le prompt
+`prompts/agent_v1.md` et le jeu de `evaluations/jeux/` ; `--prompt`,
+`--documents` et `--jeu` les remplacent.
 
 ```bash
-uv run --env-file .env python scripts/run_agent.py "<tâche>" \
-    --prompt prompts/<prompt>.md --documents evaluations/jeux/<documents>.jsonl
-uv run --env-file .env python scripts/evaluate.py --limite 3 \
-    --prompt prompts/<prompt>.md --jeu evaluations/jeux/<taches>.jsonl \
-    --documents evaluations/jeux/<documents>.jsonl
+uv run --env-file .env python scripts/run_agent.py "Extrais du PV « <nom> » les informations sur les dividendes."
+uv run --env-file .env python scripts/evaluate.py --limite 3
 ```
 
 En conteneur, qui lit `.env` tout seul, les mêmes commandes se lancent après

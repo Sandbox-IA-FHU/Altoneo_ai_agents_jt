@@ -9,6 +9,7 @@ from agent.evaluation import (
     loadTaskSet,
     percentile,
     ratio,
+    repoPath,
     summarize,
 )
 from agent.models import (
@@ -228,3 +229,12 @@ def test_everyCaseNamesAnExistingDocument() -> None:
 
     assert names
     assert set(names) <= set(store.listNames())
+
+
+def test_runPathsAreRelativeToTheRepository(tmp_path) -> None:
+    # Un run est commité : aucun chemin de la machine ne doit y entrer.
+    inside = tmp_path / "evaluations" / "jeux" / "taches.jsonl"
+    outside = Path("/srv/ailleurs/prompt.md")
+
+    assert repoPath(inside, tmp_path) == "evaluations/jeux/taches.jsonl"
+    assert repoPath(outside, tmp_path) == "prompt.md"

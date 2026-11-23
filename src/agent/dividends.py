@@ -4,7 +4,7 @@ L'agent rend un objet JSON unique, qui recopie le PV, chaque valeur avec le
 passage qui la justifie :
 
     {
-      "distribution": "oui" | "non",
+      "distribution": "oui" | "non" | "non indiqué",
       "montant_total": {"valeur": "…", "citation": "…"} | "non indiqué",
       "montant_par_part": … ,
       "date_mise_en_paiement": … ,
@@ -85,7 +85,8 @@ class Balance:
 class Extraction:
     """L'extraction rendue par l'agent. `None` dans un champ : « non indiqué »."""
 
-    distribution: bool
+    # `None` : document introuvable ou qui n'est pas un PV. Ni oui ni non.
+    distribution: bool | None
     total: Quoted | None
     perPart: Quoted | None
     paidOn: Quoted | None
@@ -129,8 +130,10 @@ def _parse(record: object) -> Extraction:
     missing = [key for key in _REQUIRED if key not in record]
     if missing:
         raise UnreadableExtractionError(f"champs manquants : {missing}")
-    if record["distribution"] not in ("oui", "non"):
-        raise UnreadableExtractionError("distribution ni « oui » ni « non »")
+    if record["distribution"] not in ("oui", "non", NOT_GIVEN):
+        raise UnreadableExtractionError(
+            "distribution ni « oui », « non », ni « non indiqué »"
+        )
     if not isinstance(record["associes"], list):
         raise UnreadableExtractionError("associes n'est pas une liste")
 
@@ -156,7 +159,11 @@ def _parse(record: object) -> Extraction:
         raise UnreadableExtractionError("remarques n'est pas une liste de textes")
 
     return Extraction(
-        distribution=record["distribution"] == "oui",
+        distribution=(
+            None
+            if record["distribution"] == NOT_GIVEN
+            else record["distribution"] == "oui"
+        ),
         total=_quoted(record["montant_total"]),
         perPart=_quoted(record["montant_par_part"]),
         paidOn=_quoted(record["date_mise_en_paiement"]),

@@ -127,3 +127,15 @@ def test_checksSayWhenNothingCanBeComputed() -> None:
     assert "hors format" in describeChecks(None)[0]
     lines = describeChecks(perfectExtraction("d-05"))
     assert "aucune date de mise en paiement écrite" in "\n".join(lines)
+
+
+def test_distributionMayBeNotGivenWhenTheDocumentIsUnreadable() -> None:
+    # Document introuvable ou qui n'est pas un PV : « non » affirmerait une
+    # absence de distribution que l'agent n'a pas lue.
+    output = json.loads(perfectOutput(RECORDS[0], STORE.read(RECORDS[0]["document"])))
+    output["distribution"] = "non indiqué"
+
+    extraction = readExtraction(json.dumps(output, ensure_ascii=False))
+
+    assert extraction is not None
+    assert extraction.distribution is None

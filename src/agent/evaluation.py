@@ -33,6 +33,18 @@ REQUIRED_FIELDS = ("cas_id", "type", "tache")
 VALID_TYPES = ("nominal", "difficile", "refus")
 
 
+def repoPath(path: Path, root: Path) -> str:
+    """Le chemin à consigner dans un fichier de run, relatif au dépôt.
+
+    Un run est commité : aucun chemin de la machine n'y entre. Hors du dépôt,
+    seul le nom du fichier est consigné.
+    """
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
 def normalizeText(text: str) -> str:
     """Passe en minuscules et retire les accents, pour comparer des mots-clés."""
     decomposed = unicodedata.normalize("NFD", text.lower())

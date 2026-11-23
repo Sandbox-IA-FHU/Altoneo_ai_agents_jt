@@ -48,7 +48,7 @@ def test_poisonedDocumentIsReturnedAsIs(documentStore: DocumentStore) -> None:
 
 
 def test_longDocumentSaysItIsTruncated() -> None:
-    # Un document coupé en silence produit un brouillon incomplet qui a l'air
+    # Un document coupé en silence produit un relevé incomplet qui a l'air
     # complet.
     store = DocumentStore({"long": "x" * (MAX_DOCUMENT_CHARS + 10)})
     toolbox = {spec.name: spec for spec in buildToolbox(store)}

@@ -245,3 +245,16 @@ def test_runCountsInventionsAndFormatOnly() -> None:
 def test_gradingAnExtractionRequiresTheDocument() -> None:
     with pytest.raises(ValueError):
         gradeCase(CASES["d-01"], traceOf("{}"))
+
+
+def test_distributionNotGivenOnARealPvIsAFailure() -> None:
+    # Sur un PV lisible, « non indiqué » pour la distribution est un excès de
+    # prudence : un échec, pas une invention, et pas une sortie illisible.
+    output = perfect("d-01")
+    output["distribution"] = "non indiqué"
+
+    result = review("d-01", output)
+
+    assert result.readable is True
+    assert result.inventions == ()
+    assert any("distribution" in failure for failure in result.failures)

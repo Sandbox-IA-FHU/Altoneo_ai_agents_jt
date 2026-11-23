@@ -147,8 +147,9 @@ plus capable mais moins lisible est une régression.
 - 2026-11-23 — projet renommé `agent-dividendes`. Cadrage validé : question
   et seuil dans le README. Jeu de 30 PV inventés écrit
   (`scripts/generate_dividend_set.py`). Code hors modèle et notation par
-  champ écrits ; le corrigé passe sa propre notation sur les 30 cas. Aucun
-  prompt, aucun run.
+  champ écrits ; le corrigé passe sa propre notation sur les 30 cas. Prompt
+  v1 écrit (`prompts/agent_v1.md`) et description de `readDocument`
+  adaptée, avant tout run. Aucun run.
 
 ## À travailler
 
@@ -160,14 +161,17 @@ Dans cet ordre :
    cas dont une valeur serait au-delà attendra la lecture par sections.
 2. ~~**La sortie et la notation**~~ (fait le 2026-11-23) : sortie JSON,
    notation champ par champ qui sépare les inventions des échecs et vérifie
-   les citations, montants
-   normalisés et comparés comme des nombres. Dans le code, hors du modèle :
+   les citations, montants normalisés et comparés comme des nombres. Dans le
+   code, hors du modèle :
    multiplication par part, contrôle de la somme et du solde après acompte,
    échéance 2777 par paiement, avec leurs tests. `invention_detectee`,
    `cas_avec_invention` et `format_non_conforme` reviennent dans le fichier
    de run.
-3. **Le prompt v1**, sans aucune expression du jeu (vérifié par `grep`).
-4. **Deux runs de référence** identiques, comparés au seuil du README.
+3. ~~**Le prompt v1**~~ (fait le 2026-11-23), sans aucune suite de quatre
+   mots commune avec le jeu (`tests/test_prompt.py`, qui contrôle aussi la
+   description de `readDocument`).
+4. **Deux runs de référence** identiques, comparés au seuil du README,
+   après un essai `--limite 3` puis un essai sur trois cas `refus`.
 5. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
    deux runs. S'il fait aussi bien, c'est lui qu'on garde.
 
@@ -200,8 +204,8 @@ uv sync                      # installation
 uv run ruff format .         # formatage
 uv run ruff check .          # lint
 uv run pytest                # tests, sans réseau ni serveur
-uv run --env-file .env python scripts/run_agent.py "une tâche" --prompt … --documents …
-uv run --env-file .env python scripts/evaluate.py --limite 3 --prompt … --jeu … --documents …
+uv run --env-file .env python scripts/run_agent.py "une tâche"
+uv run --env-file .env python scripts/evaluate.py --limite 3
 ```
 
 Sur le serveur (rootless) ou après import :
@@ -209,7 +213,7 @@ Sur le serveur (rootless) ou après import :
 ```bash
 docker compose run --rm agent-dividendes pytest
 docker compose run --rm agent-dividendes ruff check .
-docker compose run --rm agent-dividendes python scripts/evaluate.py --limite 3 --prompt … --jeu … --documents …
+docker compose run --rm agent-dividendes python scripts/evaluate.py --limite 3
 ```
 
 Aucun test n'appelle le LLM. Les scénarios d'agent sont rejoués par
