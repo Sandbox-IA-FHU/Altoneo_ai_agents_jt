@@ -6,16 +6,16 @@
 # Aucun service ne reste lancé : l'agent, les tests et le lint tournent à la
 # demande, puis le conteneur disparaît (d'où l'absence de restart). Le profil
 # empêche qu'un « docker compose up -d » global le démarre.
-#   docker compose run --rm agent-synthese pytest
-#   docker compose run --rm agent-synthese ruff check .
-#   docker compose run --rm agent-synthese ruff format --check .
-#   docker compose run --rm agent-synthese python scripts/run_agent.py "une tâche"
-#   docker compose run --rm agent-synthese python scripts/evaluate.py --limite 3
+#   docker compose run --rm agent-dividendes pytest
+#   docker compose run --rm agent-dividendes ruff check .
+#   docker compose run --rm agent-dividendes ruff format --check .
+#   docker compose run --rm agent-dividendes python scripts/run_agent.py "une tâche"
+#   docker compose run --rm agent-dividendes python scripts/evaluate.py --limite 3
 #
 # Pas de GPU, pas de port exposé : l'agent appelle le LLM par son API.
 
 services:
-  agent-synthese:
+  agent-dividendes:
     build: .
     profiles: [agent]
     # Utilisateur du conteneur, qui écrit dans le dépôt monté (fichiers de run,

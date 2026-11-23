@@ -1,16 +1,20 @@
-# Agents sur le LLM local
+# agent-dividendes — extraction des dividendes depuis les PV d'assemblée générale
 
-> **Statut** : en réorganisation
-> **Mise à jour** : 2026-10-30
-> **État** : l'agent de synthèse est arrêté et retiré du dépôt (voir
-> « [Agent de synthèse, arrêté le 2026-10-30](#agent-de-synthèse-arrêté-le-2026-10-30) »).
-> Le dépôt doit accueillir plusieurs agents ; son organisation attend l'avis
-> du responsable. Aucun agent n'y est en cours de mesure.
+> **Statut** : en cadrage
+> **Mise à jour** : 2026-11-23
+> **Question posée** : à écrire au cadrage (`/cadrer`), avec la mesure et le
+> seuil.
+> **Verdict** : aucun run, rien de mesuré.
 
 Projet dérivé du modèle d'agent à outils : une boucle plafonnée, un registre
 d'outils, une validation humaine avant toute action sensible, et une
 évaluation qui mesure la réussite, la retenue et la charge sur le LLM
-partagé.
+partagé. L'agent lit des procès-verbaux d'assemblée générale et en extrait
+les dividendes. Les PV du jeu d'évaluation sont **inventés** : aucun vrai PV
+n'entre dans le dépôt.
+
+Ce dépôt a d'abord porté un agent de synthèse, arrêté le 2026-10-30 : voir
+« [Agent de synthèse, arrêté le 2026-10-30](#agent-de-synthèse-arrêté-le-2026-10-30) ».
 
 > **Ce dépôt est public, et les projets qui en naissent aussi.** Tout ce qui y
 > entre est lisible par n'importe qui et le reste pour toujours, historique
@@ -127,9 +131,9 @@ utilisez votre propre Docker **rootless**, sans GPU — l'agent n'en a pas
 besoin, il appelle le LLM par son API.
 
 ```bash
-docker compose run --rm agent-synthese pytest
-docker compose run --rm agent-synthese ruff check .
-docker compose run --rm agent-synthese ruff format --check .
+docker compose run --rm agent-dividendes pytest
+docker compose run --rm agent-dividendes ruff check .
+docker compose run --rm agent-dividendes ruff format --check .
 ```
 
 La première commande construit l'image. Le dépôt est monté dans le
@@ -137,8 +141,8 @@ conteneur : une modification de code est prise en compte sans reconstruire.
 Après un changement de dépendances :
 
 ```bash
-docker compose run --rm agent-synthese uv add <paquet>
-docker compose build agent-synthese
+docker compose run --rm agent-dividendes uv add <paquet>
+docker compose build agent-dividendes
 ```
 
 Dans les deux cas, les tests passent **sans serveur et sans réseau** : ils
@@ -164,7 +168,7 @@ uv run --env-file .env python scripts/evaluate.py --limite 3 \
 ```
 
 En conteneur, qui lit `.env` tout seul, les mêmes commandes se lancent après
-`docker compose run --rm agent-synthese`.
+`docker compose run --rm agent-dividendes`.
 
 `.env` est dans `.gitignore`. Il n'y entre jamais.
 

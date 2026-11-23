@@ -17,6 +17,6 @@ jobs:
 
       - name: Construire l'image et lancer tests et lint dedans
         run: |
-          docker compose run --rm --build agent-synthese pytest
-          docker compose run --rm agent-synthese ruff check .
-          docker compose run --rm agent-synthese ruff format --check .
+          docker compose run --rm --build agent-dividendes pytest
+          docker compose run --rm agent-dividendes ruff check .
+          docker compose run --rm agent-dividendes ruff format --check .

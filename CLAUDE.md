@@ -1,9 +1,11 @@
-# agent-synthese — consignes Claude Code
+# agent-dividendes — consignes Claude Code
 
-> **2026-10-30 — l'agent de synthèse est arrêté et retiré du dépôt ; le plan
-> v4 n'a plus d'objet.** Les sections de ce fichier qui parlent de la
-> synthèse (projet, jeu, runs, v4) sont périmées : en attendant leur mise à
-> jour (étape 3 de la réorganisation), se référer au README.
+> **2026-11-23 — nouvel agent : extraction des dividendes depuis les PV
+> d'assemblée générale, en cadrage.** Les sections qui parlent encore de la
+> synthèse sont périmées et seront réécrites après `/cadrer` : « Le
+> projet », « Où en est-on », « À travailler », la table des modules, le
+> garde-fou 4 et « Lire un fichier de run ». À mettre à jour aussi après le
+> cadrage : `.claude/commands/`.
 
 Les règles communes de l'organisation (`CLAUDE.md` du dépôt `.github`)
 s'appliquent : français, aucune donnée réelle, aucune clé, aucun nom de
@@ -223,9 +225,9 @@ uv run --env-file .env python scripts/evaluate.py --limite 3
 Sur le serveur (rootless) ou après import :
 
 ```bash
-docker compose run --rm agent-synthese pytest
-docker compose run --rm agent-synthese ruff check .
-docker compose run --rm agent-synthese python scripts/evaluate.py --limite 3
+docker compose run --rm agent-dividendes pytest
+docker compose run --rm agent-dividendes ruff check .
+docker compose run --rm agent-dividendes python scripts/evaluate.py --limite 3
 ```
 
 Aucun test n'appelle le LLM. Les scénarios d'agent sont rejoués par

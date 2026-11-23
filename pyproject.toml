@@ -1,7 +1,7 @@
 [project]
-name = "agent-synthese"
+name = "agent-dividendes"
 version = "0.1.0"
-description = "Agent de synthèse de comptes rendus de réunion et de documents longs"
+description = "Agent d'extraction des dividendes depuis les procès-verbaux d'assemblée générale"
 requires-python = ">=3.13"
 dependencies = [
     "openai>=3.37,<4",
