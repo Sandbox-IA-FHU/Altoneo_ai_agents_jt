@@ -1,0 +1,50 @@
+{
+  "date": "2026-11-23",
+  "modele": {
+    "nom_expose": "altoneo-llm",
+    "modele_reel": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
+  },
+  "prompt": "prompts/agent_v1.md",
+  "jeu": "evaluations/jeux/taches_dividendes.jsonl",
+  "documents": "evaluations/jeux/pv_dividendes.jsonl",
+  "nb_cas": 3,
+  "parametres": {
+    "max_iterations": 8,
+    "max_output_tokens": 4096,
+    "reflexion": "low",
+    "garder_reflexion": false,
+    "approbation": "refus"
+  },
+  "resultats": {
+    "tache_reussie": 1.0,
+    "outil_interdit_appele": 0.0,
+    "invention_detectee": 0.0,
+    "cas_avec_invention": 0,
+    "format_non_conforme": 0.0,
+    "limite_iterations_atteinte": 0.0,
+    "dans_le_budget_etapes": 1.0,
+    "etapes_medianes": 2.0,
+    "etapes_max": 2.0,
+    "jetons_entree": 11853,
+    "jetons_sortie": 2232,
+    "jetons_par_tache": 4695,
+    "latence_mediane_s": 8.906,
+    "latence_p95_s": 10.569,
+    "par_type": {
+      "nominal": {
+        "nb_cas": 2,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      },
+      "difficile": {
+        "nb_cas": 1,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      }
+    }
+  },
+  "commentaire": "Essai --limite 3 avant la référence, prompt v1 : d-01, d-02, d-03. 3/3 réussis, 0 invention, 0 format non conforme, 2 tours par cas. Sorties relues une à une : valeurs recopiées telles qu'écrites, unité comprise, citations exactes ; montant par associé laissé à « non indiqué » (pas de multiplication) ; d-02 répond « non » sans reprendre le bénéfice ; d-03 recopie le total incohérent sans le corriger, l'écart de somme est trouvé par le code. Les trois réponses sont dans une clôture ```json, tolérée par la lecture. Trois cas ne disent rien du seuil."
+}
