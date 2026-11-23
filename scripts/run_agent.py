@@ -9,6 +9,10 @@ Par défaut, toute action sensible est **refusée** sans rien demander. Pour êt
 interrogé à la place, mettre `APPROBATION=console` dans `.env` ou passer
 `--approbation console`.
 
+Sous l'extraction, il affiche ce que le code a calculé à partir des valeurs
+recopiées — montants par associé, incohérences, échéances 2777 — toujours à
+valider par un collaborateur.
+
 Ce script affiche un résumé de trace : noms d'outils, compteurs, jetons,
 latence. Jamais le contenu des documents lus ni la réflexion du modèle — une
 trace complète contient le contenu métier, intégralement.
@@ -22,6 +26,7 @@ from pathlib import Path
 from agent.approval import ConsoleApproval, DenyAll
 from agent.client import REASONING_EFFORT, OpenAICompatibleClient
 from agent.config import APPROVAL_CONSOLE, VALID_APPROVAL_MODES, loadConfig
+from agent.dividends import describeChecks, readExtraction
 from agent.errors import ConfigError, DocumentStoreError, ModelCallError
 from agent.loop import MAX_ITERATIONS, runAgent, summarizeTrace
 from agent.models import STOP_ITERATION_LIMIT
@@ -110,6 +115,9 @@ def main() -> int:
         return 1
 
     print(trace.finalText)
+    print()
+    for line in describeChecks(readExtraction(trace.finalText)):
+        print(line)
     print()
     print(summarizeTrace(trace))
     print(f"latence : {trace.latencySeconds:.1f} s")

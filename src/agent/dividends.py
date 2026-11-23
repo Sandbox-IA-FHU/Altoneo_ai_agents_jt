@@ -268,3 +268,35 @@ def deadlines2777(extraction: Extraction) -> list[Deadline]:
         if paidOn is not None:
             deadlines.append(Deadline(label, paidOn, deadline2777(paidOn)))
     return deadlines
+
+
+def describeChecks(extraction: Extraction | None) -> list[str]:
+    """Ce que le code a calculé, en lignes lisibles, toutes à valider.
+
+    Aucune ligne ne vient du modèle : montants par associé, incohérences et
+    échéances 2777 sont calculés ici à partir des valeurs recopiées.
+    """
+    if extraction is None:
+        return ["Sortie hors format : rien n'est calculé, rien n'est vérifiable."]
+    lines = ["Calculé par le code, à valider par un collaborateur :"]
+    for name, amount in partnerAmounts(extraction).items():
+        shown = f"{amount} euros" if amount is not None else "répartition non écrite"
+        lines.append(f"  montant de {name} : {shown}")
+    labels = {
+        INCOHERENCE_TOTAL: "le total diffère du montant par part × le nombre de parts",
+        INCOHERENCE_PARTNER: "un montant écrit pour un associé diffère de son calcul",
+        INCOHERENCE_BALANCE: "le solde écrit diffère du dividende moins l'acompte",
+    }
+    found = incoherences(extraction)
+    lines += [f"  INCOHÉRENCE : {labels[key]}" for key in sorted(found)]
+    if not found:
+        lines.append("  aucune incohérence trouvée")
+    deadlines = deadlines2777(extraction)
+    lines += [
+        f"  échéance 2777 ({d.payment}, payé le {d.paidOn.isoformat()}) : "
+        f"{d.due.isoformat()}"
+        for d in deadlines
+    ]
+    if not deadlines:
+        lines.append("  échéance 2777 : aucune date de mise en paiement écrite")
+    return lines

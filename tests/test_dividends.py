@@ -10,6 +10,7 @@ from agent.dividends import (
     Extraction,
     deadline2777,
     deadlines2777,
+    describeChecks,
     incoherences,
     partnerAmounts,
     readExtraction,
@@ -110,3 +111,19 @@ def test_numericValueIsAccepted() -> None:
 
     assert extraction is not None
     assert partnerAmounts(extraction)["Isaure Pruneclaire"] == Decimal(18000)
+
+
+def test_checksAreDescribedForTheCollaborator() -> None:
+    lines = describeChecks(perfectExtraction("d-22"))
+    text = "\n".join(lines)
+
+    assert "à valider" in lines[0]
+    assert "INCOHÉRENCE : le solde écrit" in text
+    assert "échéance 2777 (acompte, payé le 2026-04-20) : 2026-05-15" in text
+    assert "échéance 2777 (solde, payé le 2026-07-03) : 2026-08-15" in text
+
+
+def test_checksSayWhenNothingCanBeComputed() -> None:
+    assert "hors format" in describeChecks(None)[0]
+    lines = describeChecks(perfectExtraction("d-05"))
+    assert "aucune date de mise en paiement écrite" in "\n".join(lines)
