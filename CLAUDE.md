@@ -90,12 +90,16 @@ associé ou une date absents du PV ?
   - le **code** fait tout ce qui est calcul ou vérification : normaliser les
     montants (espaces, virgule, `€`/`EUR`, montants en lettres) et les
     comparer comme des nombres, multiplier montant par part et nombre de
-    parts, signaler un total différent de la somme, vérifier que chaque
-    citation figure dans le PV, calculer l'échéance de la déclaration 2777
-    (le 15 du mois suivant la mise en paiement).
+    parts, signaler un total différent de la somme, vérifier qu'un solde
+    écrit après acompte égale le dividende moins l'acompte, vérifier que
+    chaque citation figure dans le PV (mot pour mot), calculer l'échéance de
+    la déclaration 2777 (le 15 du mois suivant la mise en paiement), une par
+    paiement : l'acompte et le solde.
 - **L'échéance 2777 n'est jamais écrite par le modèle.** La règle est prise
   telle que donnée par le métier et testée comme du code ; sa justesse
-  fiscale se valide auprès d'un collaborateur, pas par le jeu.
+  fiscale se valide auprès d'un collaborateur, pas par le jeu. **Point
+  ouvert, à faire confirmer par le pôle** : une échéance 2777 par paiement
+  (acompte et solde), plutôt qu'une seule pour le dividende.
 - **Outil** : `readDocument`, en lecture seule, non sensible. **Aucun outil
   sensible** : l'agent ne peut pas créer d'échéance, quelle que soit la
   consigne lue — c'est l'outillage qui le garantit, pas le prompt. Si un jour
@@ -141,25 +145,24 @@ plus capable mais moins lisible est une régression.
   (voir le README). Leçon reprise ici : deux runs identiques ont différé de
   trois cas, une configuration se mesure sur au moins deux runs.
 - 2026-11-23 — projet renommé `agent-dividendes`. Cadrage validé : question
-  et seuil dans le README. Aucun jeu, aucun prompt, aucun run.
+  et seuil dans le README. Jeu de 30 PV inventés écrit
+  (`scripts/generate_dividend_set.py`). Aucun prompt, aucun run.
 
 ## À travailler
 
 Dans cet ordre :
 
-1. **Le jeu** : générateur dans `scripts/`, 30 PV inventés (12 `nominal`,
-   9 `difficile`, 9 `refus`), avec les cas pièges — mise en réserve, date de
-   paiement absente, montants incohérents, acompte décidé hors AG, montant
-   par part, consigne cachée (au moins 2 cas), demande de calculer
-   l'échéance 2777, au moins un PV plus long que `MAX_DOCUMENT_CHARS`. Le
-   générateur vérifie que chaque valeur attendue figure dans le PV. Six cas
-   (2 par type) validés avant d'écrire les 30.
+1. ~~**Le jeu**~~ : écrit le 2026-11-23, 30 PV inventés, voir
+   `evaluations/jeux/LISEZ-MOI.md`. Le PV long (d-21) dépasse
+   `MAX_DOCUMENT_CHARS`, mais toutes ses valeurs sont avant la coupure : un
+   cas dont une valeur serait au-delà attendra la lecture par sections.
 2. **La sortie et la notation** : sortie JSON, notation champ par champ qui
    sépare les inventions des échecs et vérifie les citations, montants
    normalisés et comparés comme des nombres. Dans le code, hors du modèle :
-   multiplication par part, contrôle de la somme, échéance 2777, avec leurs
-   tests. `invention_detectee`, `cas_avec_invention` et
-   `format_non_conforme` reviennent dans le fichier de run.
+   multiplication par part, contrôle de la somme et du solde après acompte,
+   échéance 2777 par paiement, avec leurs tests. `invention_detectee`,
+   `cas_avec_invention` et `format_non_conforme` reviennent dans le fichier
+   de run.
 3. **Le prompt v1**, sans aucune expression du jeu (vérifié par `grep`).
 4. **Deux runs de référence** identiques, comparés au seuil du README.
 5. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur

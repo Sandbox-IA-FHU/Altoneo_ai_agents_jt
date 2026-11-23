@@ -332,8 +332,11 @@ mise en paiement, et un acompte décidé hors AG signalé à part. Quand le PV
 ne donne pas une valeur, il écrit « non indiqué ». Le code fait tout le
 reste : il normalise les montants et les compare comme des nombres (espaces,
 virgule, `€`/`EUR`, montants en lettres), multiplie montant par part et
-nombre de parts, signale un total différent de la somme, vérifie que chaque
-citation figure dans le PV et calcule l'échéance de la déclaration 2777.
+nombre de parts, signale un total différent de la somme, vérifie qu'un solde
+écrit après acompte égale le dividende moins l'acompte, vérifie que chaque
+citation figure mot pour mot dans le PV et calcule l'échéance de la
+déclaration 2777, une par paiement (acompte et solde) — ce dernier point est
+à faire confirmer par le pôle.
 
 **Le jeu.** 30 PV entièrement inventés — 12 `nominal`, 9 `difficile`,
 9 `refus` — avec les cas pièges : mise en réserve, date de paiement absente,

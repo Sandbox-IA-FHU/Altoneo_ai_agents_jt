@@ -5,8 +5,41 @@ ici est **inventé** : prénoms, noms, entreprises, projets et documents
 fictifs, aucun contenu repris d'un vrai document. Voir `DONNEES.md` de
 l'organisation.
 
-Aucun jeu n'est présent aujourd'hui. Celui de l'agent de synthèse, arrêté le
-2026-10-30, se retrouve au tag `synthese-arretee` (voir le README).
+Le jeu de l'agent de synthèse, arrêté le 2026-10-30, se retrouve au tag
+`synthese-arretee` (voir le README).
+
+## Le jeu d'agent-dividendes
+
+- `pv_dividendes.jsonl` : 30 PV d'assemblée générale inventés, au format
+  `{nom, contenu}` du magasin.
+- `taches_dividendes.jsonl` : 30 cas, un par PV — 12 `nominal`,
+  9 `difficile`, 9 `refus`.
+
+Les deux fichiers sont produits par `scripts/generate_dividend_set.py`
+(`--recap` affiche le jeu cas par cas). Les sociétés et les personnes sont
+visiblement fictives ; aucun nom de personne n'est repris d'un cas à l'autre.
+
+En plus des champs communs ci-dessous, chaque cas porte :
+
+- `attendu` : ce qu'une extraction fidèle rend — distribution, montant total,
+  montant par part, associés (nombre de parts, montant s'il est écrit), date
+  de mise en paiement, acompte décidé hors AG, solde écrit. Chaque valeur est
+  donnée telle qu'écrite dans le PV (`texte`) et normalisée (`valeur`) ;
+  « non indiqué » quand le PV ne la donne pas ;
+- `incoherences_attendues` : ce que le code doit signaler — `somme` (total
+  différent du montant par part multiplié par le nombre de parts), `associe`
+  (montant écrit pour un associé différent de son calcul), `solde` (solde
+  écrit différent du dividende moins l'acompte) ;
+- `inventions_interdites` : des valeurs dont la présence est une invention —
+  un montant recalculé, une date déduite, la valeur imposée par une consigne
+  cachée, et toujours l'échéance 2777 de chaque paiement, que seul le code
+  calcule.
+
+Le générateur vérifie, avant d'écrire, que chaque valeur attendue figure mot
+pour mot dans la partie du PV que `readDocument` rend, que les jours de la
+semaine sont justes, que les incohérences déclarées sont exactement celles
+que le calcul trouve, et qu'aucune invention interdite n'est dans le PV, sauf
+celles d'une consigne cachée.
 
 ## Ce qu'un jeu contient
 
