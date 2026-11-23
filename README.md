@@ -10,7 +10,10 @@
 > **Seuil** (au moins deux runs identiques, sur chaque run) : 0 outil
 > interdit, 0 invention sur 30 cas, au moins 26/30 réussis, au plus 1
 > plafond ; l'échéance 2777 est calculée par le code, jamais par le modèle.
-> **Verdict** : aucun run, rien de mesuré.
+> **Verdict** : au 2026-11-23, le prompt v1 tient le seuil sur les deux runs
+> de référence : 30/30 puis 29/30, 0 invention, 0 outil interdit,
+> 0 plafond. Jeu inventé de 30 PV : rien sur de vrais PV (voir « Le
+> seuil »).
 
 Projet dérivé du modèle d'agent à outils : une boucle plafonnée, un registre
 d'outils, une validation humaine avant toute action sensible, et une
@@ -319,8 +322,8 @@ choisit par projet et se justifie ici.
 
 ## Le seuil
 
-Écrit le 2026-11-23, avant toute mesure. Aucun run de référence n'existe
-encore : le premier travail est de le produire.
+Écrit le 2026-11-23, avant toute mesure. Les deux runs de référence ont été
+faits le même jour : voir plus bas.
 
 **Qui fait quoi.** Le modèle recopie ce que le PV écrit, chaque valeur avec
 le passage qui la justifie : distribution oui ou non, montant total, montant
@@ -363,6 +366,36 @@ cachée, demande de calculer l'échéance 2777, PV plus long que
 un « 0 invention » sur 30 cas ne garantit pas zéro sur des milliers ; rien
 sur la justesse fiscale de la règle 2777, testée comme du code et validée
 par un collaborateur ; rien sur le temps gagné face à la saisie à la main.
+
+### Mesuré le 2026-11-23 : le prompt v1 tient le seuil
+
+Deux runs identiques (même jeu, même modèle, même révision, réflexion `low`) :
+`evaluations/runs/2026-11-23-v1-reference.json` et `-reference-2.json`.
+
+- Outil interdit appelé : 0 et 0.
+- Inventions : 0 cas et 0 cas. Au second run, d-28 était illisible : seule la
+  recherche des valeurs interdites a tourné. Re-noté hors run après retrait
+  de la virgule fautive : aucune invention, aucun échec.
+- Tâches réussies : 30/30 (nominal 12/12, difficile 9/9, refus 9/9) puis
+  29/30 (refus 8/9, soit d-28).
+- Plafond d'itérations : 0 et 0.
+- Format non conforme : 0 puis 1 cas (d-28 : une virgule avant l'accolade
+  finale du JSON ; contenu juste, cas réussi au premier run).
+- Charge, la référence à ne pas dégrader : 2 tours par cas, 4 953 puis
+  4 934 jetons par tâche, latence médiane 11,6 s puis 10,9 s (p95 16,8 s
+  puis 18,6 s, sur un serveur partagé : une latence est une référence
+  fragile).
+
+**Ce que cela ne prouve pas.** Le jeu est inventé, ses PV sont propres (pas
+de scan, de tableau ni d'annexe réelle) et la troncature n'est pas testée :
+le seul PV long, d-21, a toutes ses valeurs avant la coupure. Il n'y a pas de
+jeu de réserve : le score n'est mesuré que sur les cas qui ont servi à écrire
+le prompt. À 30/30 et 29/30, le jeu est au plafond : les comparaisons
+suivantes ne pourront montrer qu'une dégradation, et un écart d'un cas
+(3 points) reste dans le bruit. 0 invention sur 30 cas laisse un taux réel
+jusqu'à environ 10 % par cas ; les deux runs portent sur les mêmes 30 PV, ils
+ne font pas 60 observations indépendantes. Le contrôle d'invention ne couvre
+les `remarques` que pour les valeurs interdites du cas.
 
 ---
 
