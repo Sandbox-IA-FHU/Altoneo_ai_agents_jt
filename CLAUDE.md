@@ -179,6 +179,17 @@ plus capable mais moins lisible est une régression.
   sont pas re-notés, les nouveaux runs feront foi. Seul vrai défaut de
   comportement observé : un calcul écrit dans les remarques, plus un écart
   de format (« non indiqué » placé dans l'objet valeur/citation).
+- 2026-11-23 — mesures refaites avec la lecture corrigée (commit `e0ba239`,
+  notation `c38bec6`), deux runs par jeu
+  (`evaluations/runs/2026-11-23-v1-lecture-*.json`). **Jeu principal : le
+  seuil tient** — 29/30 et 29/30, 30/30 et 30/30 après correction du corrigé
+  de d-08 (associé unique), re-noté hors LLM par
+  `scripts/regrade_details.py` ; 0 invention. Nouvelle référence de charge :
+  4 986 jetons par tâche, 2 tours médians. **Jeu de réserve : le seuil ne
+  tient pas** — 14/15 avec une invention, puis 15/15. Catégorie du défaut,
+  récurrent (trois runs de la réserve sur quatre) : un calcul écrit dans les
+  remarques. Le détail des sorties est gardé hors du dépôt
+  (`scripts/evaluate_detail.py`).
 
 ## À travailler
 
@@ -200,13 +211,17 @@ Dans cet ordre :
    description de `readDocument`).
 4. ~~**Deux runs de référence**~~ (faits le 2026-11-23) : le prompt v1 tient
    le seuil, voir « Où en est-on » et le README.
-5. **Refaire les mesures du prompt v1 avec la lecture corrigée** : deux runs
-   sur le jeu principal et deux sur la réserve, comparés à leurs seuils.
-6. **Le prompt v2**, seulement après ces mesures : ne pas calculer dans les
-   remarques (le code signale déjà les incohérences), et écrire « non
-   indiqué » comme une chaîne, jamais dans l'objet valeur/citation. **Il
-   sera écrit par une nouvelle session qui n'a jamais lu le jeu de réserve**,
-   ni ses sorties ; la session du 2026-11-23 l'a lu.
+5. ~~**Refaire les mesures du prompt v1 avec la lecture corrigée**~~ (fait
+   le 2026-11-23) : voir « Où en est-on » et le README.
+6. **Le prompt v2**, pour deux défauts, décrits ici par catégorie seulement :
+   l'agent écrit parfois un calcul dans les remarques (le code signale déjà
+   les incohérences) ; il écrit parfois « non indiqué » comme objet
+   valeur/citation au lieu d'une chaîne. **Il sera écrit par une nouvelle
+   session qui n'a jamais lu le jeu de réserve**, ni ses sorties, ni ses
+   fichiers de détail ; la session du 2026-11-23 l'a lu. Mesure : deux runs
+   par jeu, comparés aux deux seuils et aux runs à lecture corrigée.
+   Point à surveiller aussi : un cas du jeu principal a lu deux fois le
+   document (3 tours) au lieu d'une.
 7. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
    deux runs. S'il fait aussi bien, c'est lui qu'on garde. Attention : le jeu
    est au plafond (30/30, 29/30), la comparaison ne peut montrer qu'une
