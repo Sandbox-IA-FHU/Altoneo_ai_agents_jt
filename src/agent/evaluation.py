@@ -11,9 +11,13 @@ disent pas la même chose :
 - **le plafond a-t-il été touché** — un run tronqué n'est ni une réussite ni un
   échec de qualité, c'est un run qu'on ne peut pas interpréter.
 
+Et, propre à ce projet, **une invention a-t-elle été écrite** — un montant,
+un associé ou une date absents du PV. L'extraction est relue champ par champ
+par `agent.grading`, contre le corrigé du cas.
+
 La notation est volontairement la plus bête qui réponde à la question :
-présence de mots-clés, inspection de la liste d'outils appelés. Voir
-`EVALUATION.md` de l'organisation.
+présence de mots-clés, inspection de la liste d'outils appelés, comparaison
+champ par champ au corrigé. Voir `EVALUATION.md` de l'organisation.
 """
 
 import json
@@ -22,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from agent.errors import DocumentStoreError
+from agent.grading import reviewExtraction
 from agent.models import STOP_ITERATION_LIMIT, Trace
 
 REQUIRED_FIELDS = ("cas_id", "type", "tache")
@@ -45,6 +50,12 @@ class TaskCase:
     forbiddenKeywords: tuple[str, ...]
     forbiddenTools: tuple[str, ...]
     maxSteps: int | None
+    # Notation par champ : vide pour un cas qui ne la demande pas.
+    document: str = ""
+    expected: dict[str, object] | None = None
+    expectedIncoherences: tuple[str, ...] = ()
+    # Valeurs dont la seule présence est une invention.
+    forbiddenInventions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -54,12 +65,18 @@ class CaseResult:
     case: TaskCase
     succeeded: bool
     forbiddenToolCalled: bool
+    inventionDetected: bool
+    unreadableOutput: bool
     hitIterationLimit: bool
     withinStepBudget: bool | None
     stepCount: int
     inputTokens: int
     outputTokens: int
     latencySeconds: float
+    # Ce qui a été relevé, pour relire un échec. Jamais écrit dans un run :
+    # seuls les compteurs le sont.
+    inventions: tuple[str, ...] = ()
+    failures: tuple[str, ...] = ()
 
 
 def loadTaskSet(path: Path) -> list[TaskCase]:
@@ -100,18 +117,26 @@ def loadTaskSet(path: Path) -> list[TaskCase]:
                     forbiddenKeywords=tuple(record.get("mots_cles_interdits", [])),
                     forbiddenTools=tuple(record.get("outils_interdits", [])),
                     maxSteps=record.get("max_etapes"),
+                    document=str(record.get("document", "")),
+                    expected=record.get("attendu"),
+                    expectedIncoherences=tuple(
+                        record.get("incoherences_attendues", [])
+                    ),
+                    forbiddenInventions=tuple(record.get("inventions_interdites", [])),
                 )
             )
 
     return cases
 
 
-def gradeCase(case: TaskCase, trace: Trace) -> CaseResult:
-    """Note un cas à partir de sa trace.
+def gradeCase(case: TaskCase, trace: Trace, document: str | None = None) -> CaseResult:
+    """Note un cas à partir de sa trace et, s'il a un corrigé, du texte du PV.
 
     Un outil interdit appelé disqualifie le cas, même si le résultat final est
     correct : l'agent a tenté quelque chose qu'il ne devait pas, et le fait que
-    la validation l'ait arrêté ne rend pas la tentative acceptable.
+    la validation l'ait arrêté ne rend pas la tentative acceptable. Une
+    invention le disqualifie de même. Une sortie illisible le fait échouer sans
+    compter comme invention : on ne peut pas la vérifier.
     """
     normalizedText = normalizeText(trace.finalText)
     calledTools = set(trace.toolNames())
@@ -125,11 +150,33 @@ def gradeCase(case: TaskCase, trace: Trace) -> CaseResult:
     )
     hitIterationLimit = trace.stoppedReason == STOP_ITERATION_LIMIT
 
+    inventions: tuple[str, ...] = ()
+    failures: tuple[str, ...] = ()
+    readable = True
+    if case.expected is not None:
+        if document is None:
+            raise ValueError(f"{case.caseId} : le texte du PV est requis.")
+        review = reviewExtraction(
+            trace.finalText,
+            case.expected,
+            document,
+            case.forbiddenInventions,
+            case.expectedIncoherences,
+        )
+        inventions, failures, readable = (
+            review.inventions,
+            review.failures,
+            review.readable,
+        )
+
     succeeded = (
         hasAllKeywords
         and not hasForbiddenKeyword
         and not forbiddenToolCalled
         and not hitIterationLimit
+        and readable
+        and not inventions
+        and not failures
     )
 
     withinStepBudget: bool | None = None
@@ -140,12 +187,16 @@ def gradeCase(case: TaskCase, trace: Trace) -> CaseResult:
         case=case,
         succeeded=succeeded,
         forbiddenToolCalled=forbiddenToolCalled,
+        inventionDetected=bool(inventions),
+        unreadableOutput=not readable,
         hitIterationLimit=hitIterationLimit,
         withinStepBudget=withinStepBudget,
         stepCount=trace.stepCount,
         inputTokens=trace.usage.inputTokens,
         outputTokens=trace.usage.outputTokens,
         latencySeconds=trace.latencySeconds,
+        inventions=inventions,
+        failures=failures,
     )
 
 
@@ -182,6 +233,9 @@ def summarize(results: list[CaseResult]) -> dict[str, object]:
             "outil_interdit_appele": ratio(
                 [result.forbiddenToolCalled for result in subset]
             ),
+            "invention_detectee": ratio(
+                [result.inventionDetected for result in subset]
+            ),
         }
 
     return {
@@ -189,6 +243,9 @@ def summarize(results: list[CaseResult]) -> dict[str, object]:
         "outil_interdit_appele": ratio(
             [result.forbiddenToolCalled for result in results]
         ),
+        "invention_detectee": ratio([result.inventionDetected for result in results]),
+        "cas_avec_invention": sum(result.inventionDetected for result in results),
+        "format_non_conforme": ratio([result.unreadableOutput for result in results]),
         "limite_iterations_atteinte": ratio(
             [result.hitIterationLimit for result in results]
         ),

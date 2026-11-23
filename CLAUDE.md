@@ -146,7 +146,9 @@ plus capable mais moins lisible est une régression.
   trois cas, une configuration se mesure sur au moins deux runs.
 - 2026-11-23 — projet renommé `agent-dividendes`. Cadrage validé : question
   et seuil dans le README. Jeu de 30 PV inventés écrit
-  (`scripts/generate_dividend_set.py`). Aucun prompt, aucun run.
+  (`scripts/generate_dividend_set.py`). Code hors modèle et notation par
+  champ écrits ; le corrigé passe sa propre notation sur les 30 cas. Aucun
+  prompt, aucun run.
 
 ## À travailler
 
@@ -156,8 +158,9 @@ Dans cet ordre :
    `evaluations/jeux/LISEZ-MOI.md`. Le PV long (d-21) dépasse
    `MAX_DOCUMENT_CHARS`, mais toutes ses valeurs sont avant la coupure : un
    cas dont une valeur serait au-delà attendra la lecture par sections.
-2. **La sortie et la notation** : sortie JSON, notation champ par champ qui
-   sépare les inventions des échecs et vérifie les citations, montants
+2. ~~**La sortie et la notation**~~ (fait le 2026-11-23) : sortie JSON,
+   notation champ par champ qui sépare les inventions des échecs et vérifie
+   les citations, montants
    normalisés et comparés comme des nombres. Dans le code, hors du modèle :
    multiplication par part, contrôle de la somme et du solde après acompte,
    échéance 2777 par paiement, avec leurs tests. `invention_detectee`,
@@ -180,6 +183,11 @@ Et par ailleurs :
   `outil_interdit_appele` (qui doit rester à 0). Voir le README.
 - Hors périmètre de la mesure : la conversion d'un PDF en texte. L'agent lit
   du texte.
+- Piste v2 : un champ « nombre total de parts », recopié du capital, pour que
+  le contrôle de la somme conclue aussi quand la répartition des parts n'est
+  pas écrite (aujourd'hui, il ne conclut pas : d-23, d-27).
+- Les centimes écrits en lettres ne sont pas lus : une telle valeur est
+  illisible, donc un échec, jamais une invention.
 
 ---
 
@@ -221,7 +229,10 @@ action refusée, outil en erreur — hors ligne.
 | `toolbox.py` | `readDocument`, l'unique outil, en lecture seule, et le magasin de documents (les PV). |
 | `approval.py` | Politiques de validation. Défaut : refus. |
 | `loop.py` | `runAgent` — la boucle, plafonnée. |
-| `evaluation.py` | Notation et agrégation : réussite, outils interdits, plafond, tours, jetons, latence. La notation par champ est à venir (« À travailler »). |
+| `amounts.py` | Lit montants et dates comme des nombres et des dates ; rien d'ambigu n'est deviné. |
+| `dividends.py` | Lit la sortie JSON de l'agent ; calcule hors modèle montants par associé, incohérences et échéances 2777. |
+| `grading.py` | Note une extraction champ par champ : inventions, échecs, citations. |
+| `evaluation.py` | Agrégation : réussite, outils interdits, inventions, format, plafond, tours, jetons, latence. |
 
 ## Les quatre choses à ne pas casser
 
@@ -421,7 +432,6 @@ Dans cet ordre, et les deux premiers sont éliminatoires :
    montant, un associé ou une date absents du PV, une date de paiement
    déduite, une échéance 2777 écrite par le modèle. C'est la question du
    projet. Le détail se relit cas par cas, il n'est jamais écrit dans le run.
-   (Ces compteurs reviennent avec la notation par champ.)
 3. `limite_iterations_atteinte` — ces cas ne sont ni réussis ni ratés, ils sont
    ininterprétables. Beaucoup de plafonds atteints = le score de réussite porte
    sur moins de cas qu'annoncé. `format_non_conforme` aussi : une sortie

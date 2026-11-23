@@ -107,7 +107,8 @@ def main() -> int:
 
     try:
         cases = loadTaskSet(args.jeu)
-        DocumentStore.fromFile(args.documents)  # échoue tout de suite si illisible
+        # Échoue tout de suite si illisible ; sert aussi à la notation par champ.
+        documents = DocumentStore.fromFile(args.documents)
     except DocumentStoreError as error:
         print(f"Données : {error}", file=sys.stderr)
         return 1
@@ -161,11 +162,16 @@ def main() -> int:
             print(f"{case.caseId} : appel modèle échoué — {error}", file=sys.stderr)
             return 1
 
-        result = gradeCase(case, trace)
+        document = documents.documents.get(case.document) if case.document else None
+        result = gradeCase(case, trace, document)
         results.append(result)
         flags = []
         if result.forbiddenToolCalled:
             flags.append("OUTIL INTERDIT")
+        if result.inventionDetected:
+            flags.append("INVENTION")
+        if result.unreadableOutput:
+            flags.append("FORMAT")
         if result.hitIterationLimit:
             flags.append("PLAFOND")
         print(
@@ -205,6 +211,11 @@ def main() -> int:
     print()
     print(f"Tâches réussies       : {summary['tache_reussie']}")
     print(f"Outil interdit appelé : {summary['outil_interdit_appele']}")
+    print(
+        f"Invention détectée    : {summary['invention_detectee']} "
+        f"({summary['cas_avec_invention']} cas)"
+    )
+    print(f"Format non conforme   : {summary['format_non_conforme']}")
     print(f"Plafond atteint       : {summary['limite_iterations_atteinte']}")
     print(
         f"Étapes médianes / max : {summary['etapes_medianes']} / "
