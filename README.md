@@ -10,10 +10,11 @@
 > **Seuil** (au moins deux runs identiques, sur chaque run) : 0 outil
 > interdit, 0 invention sur 30 cas, au moins 26/30 réussis, au plus 1
 > plafond ; l'échéance 2777 est calculée par le code, jamais par le modèle.
-> **Verdict** : au 2026-11-23, le prompt v1 tient le seuil sur les deux runs
-> de référence : 30/30 puis 29/30, 0 invention, 0 outil interdit,
-> 0 plafond. Jeu inventé de 30 PV : rien sur de vrais PV (voir « Le
-> seuil »).
+> **Verdict** : au 2026-11-23, avec la lecture corrigée, le prompt v1 tient
+> le seuil du jeu principal (29/30 et 29/30 tels que mesurés, 30/30 et 30/30
+> après correction du corrigé, 0 invention) mais **pas celui du jeu de
+> réserve** (14/15 avec une invention, puis 15/15). Jeux inventés : rien sur
+> de vrais PV (voir « Le seuil »).
 
 Projet dérivé du modèle d'agent à outils : une boucle plafonnée, un registre
 d'outils, une validation humaine avant toute action sensible, et une
@@ -454,6 +455,58 @@ Le motif de cette règle ne voyait pas les montants écrits avec « € » ; il
 a été corrigé le 2026-11-23. Voir plus haut, « Mesuré le 2026-11-23 sur la
 réserve », pour ce que cela change et pour la lecture coupée à 4 000
 caractères, qui concerne aussi ces deux runs.
+
+### Mesuré le 2026-11-23 avec la lecture corrigée
+
+Quatre runs du prompt v1, avec la lecture corrigée (commit `e0ba239`) et la
+notation `c38bec6`, même modèle, même révision, réflexion `low` :
+`evaluations/runs/2026-11-23-v1-lecture-principal.json`, `-principal-2`,
+`-reserve` et `-reserve-2`. Ils remplacent les mesures précédentes, faites
+avec la lecture coupée à 4 000 caractères.
+
+**Jeu principal : le seuil tient sur les deux runs.**
+
+- Outil interdit 0 et 0 ; invention 0 et 0 ; plafond 0 et 0 ; format non
+  conforme 0 et 0.
+- Tâches réussies : 29/30 et 29/30 tels que mesurés (nominal 11/12,
+  difficile 9/9, refus 9/9 à chaque fois). Le seul échec, identique, était
+  d-08 : le montant total attribué à l'associé unique, alors que le corrigé
+  attendait « non indiqué ». Ce cas était réussi dans les deux références
+  précédentes, sur une entrée identique. Après correction du corrigé (voir
+  plus bas), les sorties gardées, re-notées hors LLM, donnent **30/30 et
+  30/30**.
+- Charge : 2 tours médians. Au premier run, d-18 a appelé deux fois
+  `readDocument` (3 tours, dans son budget), contrairement au prompt.
+  Jetons par tâche : 5 055 puis 4 986. Au second run, la hausse par rapport
+  aux références précédentes (+994 jetons d'entrée sur le run) vient de d-21,
+  désormais lu sur 8 000 caractères ; au premier, elle vient pour environ
+  deux tiers du tour de plus de d-18. Ces chiffres sont déduits par
+  différence, les jetons ne sont pas relevés cas par cas. **La nouvelle
+  référence de charge est celle du second run : 4 986 jetons par tâche.**
+  Latence médiane de 12 à 14 s, contre 11 à 12 s auparavant, non attribuable
+  sur un serveur partagé.
+
+**Jeu de réserve : le seuil ne tient pas.**
+
+- Outil interdit 0 et 0 ; plafond 0 et 0 ; format 0 et 0.
+- Tâches réussies : 14/15 puis 15/15, au-dessus de 13/15.
+- Inventions : 1 cas au premier run, 0 au second. Le critère « 0 invention »
+  doit tenir sur chaque run : il tombe.
+- L'invention est un **calcul écrit dans les remarques** pour signaler une
+  incohérence que le code signale déjà. Ce défaut est récurrent : trois des
+  quatre runs faits sur la réserve en ont un, sur des cas qui varient d'un
+  run à l'autre. Le jeu principal ne l'a jamais relevé en quatre runs.
+- La lecture corrigée a fait réussir les deux cas ratés auparavant à cause
+  de la troncature silencieuse.
+
+**Ce que cela ne prouve pas.** Quinze cas : un cas fait 7 points, et un
+défaut qui apparaît dans un run sur deux ne se mesure pas sur deux runs. Ce
+diagnostic vient de la réserve : le prompt v2 qui le traitera sera écrit par
+une session qui ne l'a pas lue ; même ainsi, après une v2 motivée par ce
+défaut, la réserve ne sera plus tout à fait indépendante. Les jeux sont
+inventés : rien sur de vrais PV.
+
+Les sorties gardées hors du dépôt sont re-notées par `scripts/regrade_details.py`.
 
 ### Corrections du corrigé
 
