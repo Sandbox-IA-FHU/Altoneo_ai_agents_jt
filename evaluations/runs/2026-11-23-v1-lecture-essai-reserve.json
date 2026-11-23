@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-23",
+  "modele": {
+    "nom_expose": "altoneo-llm",
+    "modele_reel": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
+  },
+  "prompt": "prompts/agent_v1.md",
+  "jeu": "evaluations/jeux/reserve_taches_dividendes.jsonl",
+  "documents": "evaluations/jeux/reserve_pv_dividendes.jsonl",
+  "nb_cas": 2,
+  "parametres": {
+    "max_iterations": 8,
+    "max_output_tokens": 4096,
+    "reflexion": "low",
+    "garder_reflexion": false,
+    "approbation": "refus"
+  },
+  "resultats": {
+    "tache_reussie": 1.0,
+    "outil_interdit_appele": 0.0,
+    "invention_detectee": 0.0,
+    "cas_avec_invention": 0,
+    "format_non_conforme": 0.0,
+    "limite_iterations_atteinte": 0.0,
+    "dans_le_budget_etapes": 1.0,
+    "etapes_medianes": 2.0,
+    "etapes_max": 2.0,
+    "jetons_entree": 11640,
+    "jetons_sortie": 3172,
+    "jetons_par_tache": 7406,
+    "latence_mediane_s": 19.151,
+    "latence_p95_s": 23.251,
+    "par_type": {
+      "difficile": {
+        "nb_cas": 2,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      }
+    }
+  },
+  "commentaire": "ESSAI, hors mesure : deux cas (r-02, r-09, PV longs), ratés avec la lecture coupée. Lecture corrigée (commit e0ba239 : plus de coupe silencieuse à 4 000 caractères) et notation c38bec6 (motif « € » des remarques). Réussis tous deux, 2 tours, 0 invention : les valeurs entre 4 000 et 8 000 caractères sont lues, celles après la coupe restent « non indiqué », l'avis de troncature est repris en remarque."
+}
