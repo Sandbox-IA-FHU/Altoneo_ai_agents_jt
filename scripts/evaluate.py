@@ -165,7 +165,8 @@ def main() -> int:
             print(f"{case.caseId} : appel modèle échoué — {error}", file=sys.stderr)
             return 1
 
-        document = documents.documents.get(case.document) if case.document else None
+        # Un document introuvable n'a rien donné à lire : il est noté vide.
+        document = documents.documents.get(case.document, "") if case.document else None
         result = gradeCase(case, trace, document)
         results.append(result)
         flags = []

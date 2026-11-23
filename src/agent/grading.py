@@ -14,6 +14,12 @@ Sépare deux choses que la notation ne doit pas confondre :
 Une sortie qui ne suit pas le format est illisible : on ne peut pas vérifier
 qu'elle n'invente rien.
 
+La notation porte sur **la partie du PV que l'agent a lue** : les
+`MAX_DOCUMENT_CHARS` premiers caractères. Une valeur située après la coupure
+et écrite par l'agent ne peut pas venir de sa lecture : c'est une invention.
+Les `remarques` sont contrôlées comme les champs : une date complète ou un
+montant en euros absents de la partie lue y sont une invention.
+
 Les montants se comparent comme des nombres, les dates comme des dates, les
 noms sans tenir compte de la casse ni des accents, les citations mot pour mot
 (seuls les espaces multiples sont réduits).
@@ -34,9 +40,15 @@ from agent.dividends import (
     incoherences,
     readExtraction,
 )
+from agent.toolbox import MAX_DOCUMENT_CHARS
 
 _SPACES = re.compile(r"[\s  ]+")
 _DIGIT_SPACE = re.compile(r"(?<=\d)[   ](?=\d)")
+# Un montant en euros dans une remarque : « 42 000 euros », « 3,50 € »…
+_MONEY = re.compile(
+    r"\d[\d \u00a0\u202f]*(?:[,.]\d+)?\s*(?:euros?|€|EUR)\b", re.IGNORECASE
+)
+_DISTRIBUTIONS = {"oui": True, "non": False, NOT_GIVEN: None}
 
 
 @dataclass(frozen=True)
@@ -130,6 +142,18 @@ class _Grader:
             )
         else:
             self._citation(label, given, value in datesIn(given.citation))
+
+    def remarks(self, remarks: tuple[str, ...]) -> None:
+        """Une date ou un montant en euros absents de la partie lue."""
+        for remark in remarks:
+            dates = [d for d in datesIn(remark) if d not in self.documentDates]
+            amounts = [
+                text
+                for text in _MONEY.findall(remark)
+                if not set(figuresIn(text)) <= self.documentAmounts
+            ]
+            for value in [*(d.isoformat() for d in dates), *amounts]:
+                self.inventions.append(f"remarque : {value}, absent du PV")
 
     def partners(
         self, extraction: Extraction, expected: list[dict[str, object]], paid: bool
@@ -231,16 +255,20 @@ def reviewExtraction(
     forbidden: tuple[str, ...] = (),
     expectedIncoherences: tuple[str, ...] = (),
 ) -> ExtractionReview:
-    """Note la sortie de l'agent contre le corrigé d'un cas."""
+    """Note la sortie de l'agent contre le corrigé d'un cas.
+
+    `document` est le PV entier ; seule la partie que l'agent a lue compte.
+    """
     extraction = readExtraction(output)
-    grader = _Grader(document)
+    grader = _Grader(document[:MAX_DOCUMENT_CHARS])
     grader.inventions += _forbiddenFound(output, extraction, forbidden)
     if extraction is None:
         return ExtractionReview(False, tuple(grader.inventions), ())
 
-    paid = expected["distribution"] == "oui"
-    if extraction.distribution is None or extraction.distribution != paid:
-        grader.failures.append(f"distribution : {'oui' if paid else 'non'} attendu")
+    wanted = _DISTRIBUTIONS[str(expected["distribution"])]
+    paid = wanted is True
+    if extraction.distribution != wanted:
+        grader.failures.append(f"distribution : « {expected['distribution']} » attendu")
     grader.amount("montant total", extraction.total, expected["montant_total"])
     grader.amount("montant par part", extraction.perPart, expected["montant_par_part"])
     grader.day("mise en paiement", extraction.paidOn, expected["date_mise_en_paiement"])
@@ -268,6 +296,8 @@ def reviewExtraction(
         else None,
         _block(expected["solde"]),
     )
+
+    grader.remarks(extraction.remarks)
 
     computed = incoherences(extraction)
     if computed != set(expectedIncoherences):

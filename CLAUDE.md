@@ -189,8 +189,9 @@ Et par ailleurs :
   un **jeu de réserve**, écrit sans regarder le prompt, pour mesurer hors des
   cas qui ont servi à l'écrire ; un **cas dont une valeur est après la
   coupure** de `MAX_DOCUMENT_CHARS`, pour tester la troncature ; des cas plus
-  difficiles pour sortir du plafond ; un **contrôle d'invention dans les
-  `remarques`**, aujourd'hui limité aux valeurs interdites du cas.
+  difficiles pour sortir du plafond. Le contrôle d'invention dans les
+  `remarques` (dates et montants en euros) et la notation contre la partie
+  lue du PV sont faits ; les deux références, re-notées, ne changent pas.
 - Le format : une virgule de trop a suffi à faire échouer d-28. Mesurer la
   sortie structurée imposée par le serveur, sur deux runs. Ne pas rendre
   `readExtraction` tolérant sans nouveau run : ce serait changer la mesure.

@@ -394,8 +394,11 @@ le prompt. À 30/30 et 29/30, le jeu est au plafond : les comparaisons
 suivantes ne pourront montrer qu'une dégradation, et un écart d'un cas
 (3 points) reste dans le bruit. 0 invention sur 30 cas laisse un taux réel
 jusqu'à environ 10 % par cas ; les deux runs portent sur les mêmes 30 PV, ils
-ne font pas 60 observations indépendantes. Le contrôle d'invention ne couvre
-les `remarques` que pour les valeurs interdites du cas.
+ne font pas 60 observations indépendantes. Lors de ces runs, le contrôle
+d'invention ne couvrait les `remarques` que pour les valeurs interdites du
+cas ; depuis, les dates et les montants en euros des remarques sont
+contrôlés, et la notation porte sur la partie du PV que l'agent a lue.
+Re-notées ainsi hors run, les deux références donnent le même résultat.
 
 ---
 

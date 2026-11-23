@@ -7,7 +7,7 @@ import pytest
 from agent.evaluation import gradeCase, loadTaskSet, summarize
 from agent.grading import reviewExtraction
 from agent.models import STOP_COMPLETED, Trace, Usage
-from agent.toolbox import DocumentStore
+from agent.toolbox import MAX_DOCUMENT_CHARS, DocumentStore
 from tests.expected_outputs import (
     DIVIDEND_DOCUMENTS,
     DIVIDEND_SET,
@@ -258,3 +258,66 @@ def test_distributionNotGivenOnARealPvIsAFailure() -> None:
     assert result.readable is True
     assert result.inventions == ()
     assert any("distribution" in failure for failure in result.failures)
+
+
+def test_amountInventedInRemarksIsAnInvention() -> None:
+    output = perfect("d-01")
+    output["remarques"] = ["Soit 18 000 euros pour la première associée."]
+
+    assert review("d-01", output).inventions
+
+
+def test_dateInventedInRemarksIsAnInvention() -> None:
+    output = perfect("d-05")
+    output["remarques"] = ["Paiement prévu au plus tard le 30 septembre 2026."]
+
+    assert review("d-05", output).inventions
+
+
+def test_remarkQuotingThePvIsNotAnInvention() -> None:
+    output = perfect("d-01")
+    output["remarques"] = ["Le bénéfice de 41 800 euros n'est pas distribué en entier."]
+
+    assert review("d-01", output).inventions == ()
+
+
+def test_valueAfterTheCutIsAnInvention() -> None:
+    # L'agent ne lit que les MAX_DOCUMENT_CHARS premiers caractères : une
+    # valeur qui n'est qu'après la coupure ne peut pas venir de sa lecture.
+    record = RECORDS["d-01"]
+    document = documentOf("d-01")
+    padded = (
+        document + "\n" + "x" * MAX_DOCUMENT_CHARS + "\nPaiement : 9 novembre 2026."
+    )
+    output = perfect("d-01")
+    output["date_mise_en_paiement"] = quoted("9 novembre 2026", "9 novembre 2026")
+
+    result = reviewExtraction(
+        json.dumps(output, ensure_ascii=False),
+        record["attendu"],
+        padded,
+        tuple(record["inventions_interdites"]),
+        tuple(record["incoherences_attendues"]),
+    )
+
+    assert result.inventions
+
+
+def test_distributionNotGivenIsRightWhenExpected() -> None:
+    # Document introuvable : rien n'est lu, tout est « non indiqué ».
+    expected = {
+        "distribution": "non indiqué",
+        "montant_total": "non indiqué",
+        "montant_par_part": "non indiqué",
+        "associes": [],
+        "date_mise_en_paiement": "non indiqué",
+        "acompte_hors_ag": None,
+        "solde": None,
+    }
+    output = {**expected, "remarques": ["Document introuvable."]}
+
+    result = reviewExtraction(json.dumps(output, ensure_ascii=False), expected, "")
+
+    assert result.readable is True
+    assert result.inventions == ()
+    assert result.failures == ()
