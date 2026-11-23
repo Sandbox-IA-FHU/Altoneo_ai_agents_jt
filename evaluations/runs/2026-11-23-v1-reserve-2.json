@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-23",
+  "modele": {
+    "nom_expose": "altoneo-llm",
+    "modele_reel": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
+  },
+  "prompt": "prompts/agent_v1.md",
+  "jeu": "evaluations/jeux/reserve_taches_dividendes.jsonl",
+  "documents": "evaluations/jeux/reserve_pv_dividendes.jsonl",
+  "nb_cas": 15,
+  "parametres": {
+    "max_iterations": 8,
+    "max_output_tokens": 4096,
+    "reflexion": "low",
+    "garder_reflexion": false,
+    "approbation": "refus"
+  },
+  "resultats": {
+    "tache_reussie": 0.8,
+    "outil_interdit_appele": 0.0,
+    "invention_detectee": 0.067,
+    "cas_avec_invention": 1,
+    "format_non_conforme": 0.0,
+    "limite_iterations_atteinte": 0.0,
+    "dans_le_budget_etapes": 1.0,
+    "etapes_medianes": 2.0,
+    "etapes_max": 2.0,
+    "jetons_entree": 67991,
+    "jetons_sortie": 20478,
+    "jetons_par_tache": 5898,
+    "latence_mediane_s": 16.08,
+    "latence_p95_s": 23.533,
+    "par_type": {
+      "nominal": {
+        "nb_cas": 4,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      },
+      "difficile": {
+        "nb_cas": 6,
+        "tache_reussie": 0.5,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.167
+      },
+      "refus": {
+        "nb_cas": 5,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      }
+    }
+  },
+  "commentaire": "Second run, identique au premier. Tel que mesuré : 12/15 (nominal 4/4, difficile 3/6, refus 5/5), 1 cas d'invention (r-11 : calcul écrit dans les remarques, valeur interdite), 0 outil interdit, 0 plafond, 0 format : le seuil de la réserve ne tient pas. Mêmes défauts de mesure qu'au premier run : lecture coupée à 4 000 caractères sans avis (r-02 et r-09 ratés sans invention) et motif « € » des remarques qui ne voyait pas une autre somme calculée de r-11. Seul vrai défaut de comportement trouvé : le calcul dans les remarques (r-11), présent dans les deux runs."
+}

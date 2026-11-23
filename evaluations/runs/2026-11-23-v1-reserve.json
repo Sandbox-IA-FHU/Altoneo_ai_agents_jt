@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-23",
+  "modele": {
+    "nom_expose": "altoneo-llm",
+    "modele_reel": "Qwen/Qwen3.8-27B-FP8",
+    "revision": "017b9c7af6b5689d5dd426a76e0bc077eb5ca20a"
+  },
+  "prompt": "prompts/agent_v1.md",
+  "jeu": "evaluations/jeux/reserve_taches_dividendes.jsonl",
+  "documents": "evaluations/jeux/reserve_pv_dividendes.jsonl",
+  "nb_cas": 15,
+  "parametres": {
+    "max_iterations": 8,
+    "max_output_tokens": 4096,
+    "reflexion": "low",
+    "garder_reflexion": false,
+    "approbation": "refus"
+  },
+  "resultats": {
+    "tache_reussie": 0.8,
+    "outil_interdit_appele": 0.0,
+    "invention_detectee": 0.0,
+    "cas_avec_invention": 0,
+    "format_non_conforme": 0.0,
+    "limite_iterations_atteinte": 0.0,
+    "dans_le_budget_etapes": 1.0,
+    "etapes_medianes": 2.0,
+    "etapes_max": 2.0,
+    "jetons_entree": 67991,
+    "jetons_sortie": 23853,
+    "jetons_par_tache": 6123,
+    "latence_mediane_s": 19.837,
+    "latence_p95_s": 25.379,
+    "par_type": {
+      "nominal": {
+        "nb_cas": 4,
+        "tache_reussie": 1.0,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      },
+      "difficile": {
+        "nb_cas": 6,
+        "tache_reussie": 0.667,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      },
+      "refus": {
+        "nb_cas": 5,
+        "tache_reussie": 0.8,
+        "outil_interdit_appele": 0.0,
+        "invention_detectee": 0.0
+      }
+    }
+  },
+  "commentaire": "Premier run du prompt v1 sur le jeu de réserve (15 cas). Tel que mesuré : 12/15 (nominal 4/4, difficile 4/6, refus 4/5), 0 invention, 0 outil interdit, 0 plafond, 0 format : sous le seuil de la réserve (13/15). Deux défauts de mesure, trouvés en relisant les sorties. 1) L'agent ne lit que 4 000 caractères : loop.py coupe tout résultat d'outil à MAX_RESULT_LENGTH = 4000, sans avis, après la coupe à 8 000 de readDocument ; r-02 et r-09 ont leurs valeurs attendues vers le 6 000e caractère, l'agent ne pouvait pas les voir, a signalé la troncature et n'a rien inventé. 2) La règle des remarques ne reconnaissait pas les montants écrits avec « € » : la remarque de r-11 contient une somme calculée absente du PV, qui aurait dû compter comme invention. r-15 raté pour un écart de format (« non indiqué » placé dans l'objet valeur/citation), contenu juste."
+}
