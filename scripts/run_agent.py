@@ -32,7 +32,7 @@ from agent.models import STOP_ITERATION_LIMIT
 from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
-DEFAULT_PROMPT = Path("prompts/agent_v1.md")
+DEFAULT_PROMPT = Path("prompts/agent_v2.md")
 DEFAULT_DOCUMENTS = Path("evaluations/jeux/pv_dividendes.jsonl")
 
 

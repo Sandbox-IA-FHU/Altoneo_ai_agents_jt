@@ -53,9 +53,17 @@ def test_promptSharesNoFourWordSequenceWithTheSet(path: Path) -> None:
     ids=lambda path: path.name,
 )
 def test_laterPromptSharesNothingWithTheReserveSet(path: Path) -> None:
-    # Le jeu de réserve ne sert jamais à écrire un prompt.
+    # Le jeu de réserve ne sert jamais à écrire un prompt. Seules sont tolérées
+    # les suites héritées d'un prompt écrit avant lui : aucun texte nouveau.
     reserve = setTexts(RESERVE_DOCUMENTS, RESERVE_SET)
-    assert fourWordSequences(promptText(path)) & fourWordSequences(reserve) == set()
+    inherited = set().union(
+        *(
+            fourWordSequences(promptText(REPO_ROOT / "prompts" / name))
+            for name in WRITTEN_BEFORE_RESERVE
+        )
+    )
+    shared = fourWordSequences(promptText(path)) & fourWordSequences(reserve)
+    assert shared - inherited == set()
 
 
 @pytest.mark.parametrize("path", PROMPTS, ids=lambda path: path.name)

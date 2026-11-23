@@ -42,7 +42,7 @@ from agent.toolbox import DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PROMPT = Path("prompts/agent_v1.md")
+DEFAULT_PROMPT = Path("prompts/agent_v2.md")
 DEFAULT_DOCUMENTS = Path("evaluations/jeux/pv_dividendes.jsonl")
 DEFAULT_TASK_SET = Path("evaluations/jeux/taches_dividendes.jsonl")
 RUNS_DIR = Path("evaluations/runs")
