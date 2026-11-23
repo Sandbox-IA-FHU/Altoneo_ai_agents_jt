@@ -34,3 +34,6 @@ __pycache__/
 
 # Détail des runs : cite les PV, toujours hors du dépôt (scripts/evaluate_detail.py).
 detail-*.txt
+
+# Réglages Claude Code propres à un poste (règles de lecture locales).
+.claude/settings.local.json

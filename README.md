@@ -410,7 +410,8 @@ mais deux défauts de mesure ont été trouvés en relisant les sorties :
 - La règle « € » corrigée a été vérifiée **hors du dépôt**, le 2026-11-23,
   sur les sorties gardées pendant la session : aucun changement sur les
   60 sorties des deux runs de référence du jeu principal ; dans la réserve,
-  r-11 devient une invention au premier run aussi.
+  le premier run compte lui aussi une invention, de la même catégorie : un
+  calcul écrit dans les remarques.
 - **Tous ces runs** — l'essai `--limite 3`, l'essai sur trois cas `refus`,
   les deux références du jeu principal et les deux runs de la réserve — ont
   été faits avec la lecture coupée à 4 000 caractères, sans avis.
