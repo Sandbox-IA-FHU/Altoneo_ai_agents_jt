@@ -168,6 +168,17 @@ plus capable mais moins lisible est une régression.
   mesure : au moins 13/15, autres critères inchangés, sur deux runs. Notation
   désormais contre la partie lue du PV, remarques contrôlées. Aucun run sur
   la réserve.
+- 2026-11-23 — deux runs du prompt v1 sur la réserve
+  (`evaluations/runs/2026-11-23-v1-reserve.json`, `-reserve-2.json`) :
+  12/15 puis 12/15, 0 puis 1 cas d'invention : **le seuil de la réserve ne
+  tient pas tel que mesuré.** Deux défauts de mesure trouvés en relisant les
+  sorties, corrigés le jour même : la boucle recoupait tout résultat d'outil
+  à 4 000 caractères sans le dire (l'agent lisait la moitié des PV longs) ;
+  le contrôle des remarques ne voyait pas les montants en « € ». Tous les
+  runs commités ont été faits avec la lecture à 4 000 caractères ; ils ne
+  sont pas re-notés, les nouveaux runs feront foi. Seul vrai défaut de
+  comportement observé : un calcul écrit dans les remarques, plus un écart
+  de format (« non indiqué » placé dans l'objet valeur/citation).
 
 ## À travailler
 
@@ -181,17 +192,22 @@ Dans cet ordre :
    notation champ par champ qui sépare les inventions des échecs et vérifie
    les citations, montants normalisés et comparés comme des nombres. Dans le
    code, hors du modèle : multiplication par part, contrôle de la somme et
-   du solde après acompte, échéance 2777 par paiement, avec leurs tests. `invention_detectee`,
-   `cas_avec_invention` et `format_non_conforme` reviennent dans le fichier
-   de run.
+   du solde après acompte, échéance 2777 par paiement, avec leurs tests.
+   `invention_detectee`, `cas_avec_invention` et `format_non_conforme`
+   reviennent dans le fichier de run.
 3. ~~**Le prompt v1**~~ (fait le 2026-11-23), sans aucune suite de quatre
    mots commune avec le jeu (`tests/test_prompt.py`, qui contrôle aussi la
    description de `readDocument`).
 4. ~~**Deux runs de référence**~~ (faits le 2026-11-23) : le prompt v1 tient
    le seuil, voir « Où en est-on » et le README.
-5. **Deux runs du prompt v1 sur le jeu de réserve**, comparés à son seuil
-   (README).
-6. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
+5. **Refaire les mesures du prompt v1 avec la lecture corrigée** : deux runs
+   sur le jeu principal et deux sur la réserve, comparés à leurs seuils.
+6. **Le prompt v2**, seulement après ces mesures : ne pas calculer dans les
+   remarques (le code signale déjà les incohérences), et écrire « non
+   indiqué » comme une chaîne, jamais dans l'objet valeur/citation. **Il
+   sera écrit par une nouvelle session qui n'a jamais lu le jeu de réserve**,
+   ni ses sorties ; la session du 2026-11-23 l'a lu.
+7. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
    deux runs. S'il fait aussi bien, c'est lui qu'on garde. Attention : le jeu
    est au plafond (30/30, 29/30), la comparaison ne peut montrer qu'une
    dégradation ; un écart d'un cas reste dans le bruit.

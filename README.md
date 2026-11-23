@@ -394,7 +394,10 @@ mais deux défauts de mesure ont été trouvés en relisant les sorties :
 - **L'agent ne lisait que 4 000 caractères.** La boucle coupait tout résultat
   d'outil à 4 000 caractères, sans le signaler, après la coupe à
   `MAX_DOCUMENT_CHARS` de `readDocument` : deux cas avaient leurs valeurs
-  au-delà. L'agent a signalé la troncature et n'a rien inventé.
+  au-delà. L'agent a signalé la troncature et n'a rien inventé. **Corrigé le
+  2026-11-23** : la coupe de la boucle (`MAX_RESULT_LENGTH`) n'est plus
+  jamais plus courte que celle de `readDocument` et de son avis, et toute
+  coupe faite par la boucle est dite à l'agent (`tests/test_loop.py`).
 - **Les montants écrits avec « € » échappaient au contrôle des remarques.**
   Avec le motif corrigé, appliqué aux sorties gardées, un même cas compte une
   invention dans les deux runs : un calcul écrit dans les remarques.
@@ -434,7 +437,10 @@ Deux runs identiques (même jeu, même modèle, même révision, réflexion `low
 
 **Ce que cela ne prouve pas.** Le jeu est inventé, ses PV sont propres (pas
 de scan, de tableau ni d'annexe réelle) et la troncature n'est pas testée :
-le seul PV long, d-21, a toutes ses valeurs avant la coupure. Il n'y a pas de
+le seul PV long, d-21, a toutes ses valeurs avant la coupure. Lors de ces
+runs, l'agent ne lisait d'ailleurs que les 4 000 premiers caractères de
+chaque PV, sans le savoir (corrigé depuis, voir la réserve) : seul d-21
+dépassait cette longueur. Il n'y a pas de
 jeu de réserve : le score n'est mesuré que sur les cas qui ont servi à écrire
 le prompt. À 30/30 et 29/30, le jeu est au plafond : les comparaisons
 suivantes ne pourront montrer qu'une dégradation, et un écart d'un cas

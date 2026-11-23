@@ -38,7 +38,17 @@ from agent.tools import ToolRegistry
 # Plafond d'itérations. En dur, en majuscules, et testé.
 MAX_ITERATIONS = 8
 
-MAX_RESULT_LENGTH = 4000
+# Taille maximale d'un résultat d'outil renvoyé au modèle. Jamais plus courte
+# que la coupe de readDocument et son avis (test_readDocumentIsNeverCutAgain) :
+# un document déjà tronqué par l'outil ne l'est pas une seconde fois.
+MAX_RESULT_LENGTH = 10_000
+
+# Une coupe faite ici est toujours dite au modèle : un résultat coupé en
+# silence a l'air complet.
+RESULT_TRUNCATED_TEXT = (
+    "\n\n[Résultat tronqué : {shown} caractères affichés sur {total}. "
+    "La suite n'est pas lue.]"
+)
 
 ITERATION_LIMIT_TEXT = (
     "L'agent a atteint sa limite de {limit} itérations sans terminer. "
@@ -76,7 +86,16 @@ def executeCall(
     except ToolError as error:
         return ToolOutcome(call=call, content=f"Erreur : {error}", isError=True)
 
-    return ToolOutcome(call=call, content=str(result)[:MAX_RESULT_LENGTH])
+    return ToolOutcome(call=call, content=truncateResult(str(result)))
+
+
+def truncateResult(content: str) -> str:
+    """Coupe un résultat trop long, et le dit."""
+    if len(content) <= MAX_RESULT_LENGTH:
+        return content
+    return content[:MAX_RESULT_LENGTH] + RESULT_TRUNCATED_TEXT.format(
+        shown=MAX_RESULT_LENGTH, total=len(content)
+    )
 
 
 def buildToolMessages(outcomes: tuple[ToolOutcome, ...]) -> list[dict[str, object]]:

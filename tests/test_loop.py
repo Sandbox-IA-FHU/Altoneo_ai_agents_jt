@@ -6,8 +6,15 @@ c'est une régression de sécurité ou de charge du serveur.
 """
 
 from agent.approval import AllowAll, DenyAll
-from agent.loop import runAgent, summarizeTrace
-from agent.models import STOP_COMPLETED, STOP_ITERATION_LIMIT
+from agent.loop import (
+    MAX_RESULT_LENGTH,
+    executeCall,
+    runAgent,
+    summarizeTrace,
+    truncateResult,
+)
+from agent.models import STOP_COMPLETED, STOP_ITERATION_LIMIT, ToolCall, ToolSpec
+from agent.toolbox import MAX_DOCUMENT_CHARS, DocumentStore, buildToolbox
 from agent.tools import ToolRegistry
 from tests.conftest import LoopingClient, ScriptedClient, textTurn, toolTurn
 
@@ -249,3 +256,51 @@ def test_usageIsAccumulatedAcrossTurns(registry: ToolRegistry) -> None:
 
     assert trace.usage.inputTokens == 200
     assert trace.usage.outputTokens == 40
+
+
+def test_readDocumentIsNeverCutAgain() -> None:
+    # La boucle a longtemps recoupé tout résultat à 4 000 caractères, en
+    # silence, alors que readDocument en rendait 8 000 avec son avis : l'agent
+    # lisait la moitié du document sans le savoir.
+    store = DocumentStore({"long": "x" * (3 * MAX_DOCUMENT_CHARS)})
+    registry = ToolRegistry(buildToolbox(store))
+    expected = registry.get("readDocument").handler({"nom": "long"})
+
+    outcome = executeCall(
+        ToolCall(callId="c1", toolName="readDocument", arguments={"nom": "long"}),
+        registry,
+        DenyAll(),
+    )
+
+    assert len(expected) < MAX_RESULT_LENGTH
+    assert outcome.content == expected
+    assert "tronqué" in outcome.content
+
+
+def test_resultCutByTheLoopIsSignalled() -> None:
+    # Un résultat coupé en silence a l'air complet : la coupe est dite.
+    def longResult(arguments: dict[str, object]) -> str:
+        return "y" * (MAX_RESULT_LENGTH + 500)
+
+    registry = ToolRegistry(
+        [
+            ToolSpec(
+                name="longTool",
+                description="Outil de test qui rend un résultat très long.",
+                inputSchema={"type": "object", "properties": {}},
+                handler=longResult,
+            )
+        ]
+    )
+
+    outcome = executeCall(
+        ToolCall(callId="c1", toolName="longTool", arguments={}), registry, DenyAll()
+    )
+
+    assert outcome.content.startswith("y" * MAX_RESULT_LENGTH)
+    assert "Résultat tronqué" in outcome.content
+    assert str(MAX_RESULT_LENGTH + 500) in outcome.content
+
+
+def test_shortResultIsLeftUntouched() -> None:
+    assert truncateResult("court") == "court"
