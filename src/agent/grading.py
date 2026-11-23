@@ -52,6 +52,8 @@ _MONEY = re.compile(
     re.IGNORECASE,
 )
 _DISTRIBUTIONS = {"oui": True, "non": False, NOT_GIVEN: None}
+# Clé du corrigé : la valeur est attendue, mais « non indiqué » est accepté.
+OR_NOT_GIVEN = "ou_non_indique"
 
 
 @dataclass(frozen=True)
@@ -100,7 +102,9 @@ class _Grader:
     def amount(self, label: str, given: Quoted | None, expected: object) -> None:
         wanted = None if expected == NOT_GIVEN else _expectedAmount(expected)
         if given is None:
-            if wanted is not None:
+            # Le corrigé peut accepter « non indiqué » à côté de la valeur.
+            accepted = isinstance(expected, dict) and expected.get(OR_NOT_GIVEN)
+            if wanted is not None and not accepted:
                 self.failures.append(
                     f"{label} : « {NOT_GIVEN} » alors que le PV le donne"
                 )

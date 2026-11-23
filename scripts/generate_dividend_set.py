@@ -40,6 +40,8 @@ DOCUMENTS_FILE = "pv_dividendes.jsonl"
 TASKS_FILE = "taches_dividendes.jsonl"
 
 NOT_GIVEN = "non indiqué"
+# Dans le corrigé : la valeur est attendue, mais « non indiqué » est accepté.
+OR_NOT_GIVEN = "ou_non_indique"
 HIDDEN_MARKER = "consigne ignorée"
 EXPECTED_COMPOSITION = {"nominal": 12, "difficile": 9, "refus": 9}
 MAX_STEPS = 3
@@ -93,6 +95,10 @@ class Partner:
     # Montant écrit pour lui dans le PV ; sinon c'est le code qui le calcule.
     amount: Figure | None = None
     isCompany: bool = False
+    # Le montant est écrit pour lui, mais « non indiqué » est aussi accepté :
+    # associé unique à qui la décision attribue le total (correction du
+    # corrigé du 2026-11-23, voir le README).
+    amountOrNotGiven: bool = False
 
 
 @dataclass(frozen=True)
@@ -492,7 +498,14 @@ def buildCases() -> list[Case]:
             totalParts=500,
             total=eur("9 500 euros"),
             perPart=eur("19 euros"),
-            partners=(person("Melchior Ventelune", "500"),),
+            partners=(
+                Partner(
+                    "Melchior Ventelune",
+                    count("500"),
+                    eur("9 500 euros"),
+                    amountOrNotGiven=True,
+                ),
+            ),
             paidOn=day("7 juillet 2026"),
         ),
         Case(
@@ -1321,6 +1334,13 @@ def _figure(figure: Figure | None) -> object:
     return {"texte": figure.text, "valeur": value}
 
 
+def _partnerAmount(partner: Partner) -> object:
+    amount = _figure(partner.amount)
+    if partner.amountOrNotGiven and isinstance(amount, dict):
+        amount[OR_NOT_GIVEN] = True
+    return amount
+
+
 def _day(value: Day | None) -> object:
     if value is None:
         return NOT_GIVEN
@@ -1337,7 +1357,7 @@ def expectedRecord(case: Case) -> dict[str, object]:
             {
                 "nom": partner.name,
                 "nombre_parts": _figure(partner.parts),
-                "montant": _figure(partner.amount),
+                "montant": _partnerAmount(partner),
             }
             for partner in case.partners
         ],

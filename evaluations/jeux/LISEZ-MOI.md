@@ -25,7 +25,9 @@ En plus des champs communs ci-dessous, chaque cas porte :
   montant par part, associés (nombre de parts, montant s'il est écrit), date
   de mise en paiement, acompte décidé hors AG, solde écrit. Chaque valeur est
   donnée telle qu'écrite dans le PV (`texte`) et normalisée (`valeur`) ;
-  « non indiqué » quand le PV ne la donne pas ;
+  « non indiqué » quand le PV ne la donne pas. Une valeur marquée
+  `ou_non_indique` accepte aussi « non indiqué » (voir « Corrections du
+  corrigé » dans le README) ;
 - `incoherences_attendues` : ce que le code doit signaler — `somme` (total
   différent du montant par part multiplié par le nombre de parts), `associe`
   (montant écrit pour un associé différent de son calcul), `solde` (solde

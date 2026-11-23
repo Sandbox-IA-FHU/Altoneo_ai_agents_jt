@@ -340,3 +340,22 @@ def test_amountInventedInRemarksIsCaughtInEveryCurrencyForm(remark: str) -> None
     output["remarques"] = [remark]
 
     assert review("d-01", output).inventions
+
+
+def test_soleAssociateMayReceiveTheTotalOrNotGiven() -> None:
+    # d-08 : l'associé unique se voit attribuer le total. Le corrigé accepte
+    # ce montant, recopié et cité, comme « non indiqué » (correction du
+    # corrigé du 2026-11-23, voir le README).
+    document = documentOf("d-08")
+    line = next(line for line in document.splitlines() if "9 500 euros" in line)
+
+    withAmount = perfect("d-08")
+    withAmount["associes"][0]["montant"] = quoted("9 500 euros", line)
+    notGiven = perfect("d-08")
+    notGiven["associes"][0]["montant"] = "non indiqué"
+    wrong = perfect("d-08")
+    wrong["associes"][0]["montant"] = quoted("19 euros", line)
+
+    assert review("d-08", withAmount).failures == ()
+    assert review("d-08", notGiven).failures == ()
+    assert review("d-08", wrong).failures

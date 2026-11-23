@@ -455,6 +455,21 @@ a été corrigé le 2026-11-23. Voir plus haut, « Mesuré le 2026-11-23 sur la
 réserve », pour ce que cela change et pour la lecture coupée à 4 000
 caractères, qui concerne aussi ces deux runs.
 
+### Corrections du corrigé
+
+Le corrigé se corrige quand la lecture des sorties montre qu'il note mal, pas
+quand un score déplaît. Chaque correction est datée, justifiée, faite dans
+`scripts/generate_dividend_set.py`, et suivie d'une re-notation hors LLM des
+sorties gardées.
+
+- **2026-11-23, d-08** — décisions de l'associé unique d'une EURL. Le
+  corrigé attendait « non indiqué » pour le montant de l'associé, faute de
+  montant par associé écrit à part. Mais la décision attribue le total à
+  cette seule personne (« se verser un dividende de… ») : recopier ce total
+  comme son montant, avec sa citation, est fidèle au PV. Le corrigé accepte
+  désormais les deux réponses (clé `ou_non_indique`). Une autre valeur reste
+  un échec, et un montant absent du PV une invention.
+
 ---
 
 ## Agent de synthèse, arrêté le 2026-10-30
