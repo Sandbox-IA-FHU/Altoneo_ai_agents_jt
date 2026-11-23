@@ -109,6 +109,12 @@ associé ou une date absents du PV ?
   interdit : éliminatoire, sur les 30 cas (seuil du README). Une valeur dont
   la citation est introuvable dans le PV ne compte pas : elle est
   invérifiable.
+- **Jeu de réserve** (`evaluations/jeux/reserve_*.jsonl`) : 15 PV écrits par
+  un sous-agent isolé, pour mesurer le prompt hors des cas qui ont servi à
+  l'écrire. **Il ne sert jamais à écrire ou retoucher un prompt** : ne le lis
+  pas pour ça, ni ses sorties détaillées. **Le prompt v2 devra être écrit par
+  une session qui n'a jamais lu le jeu de réserve** — la session du
+  2026-11-23 l'a lu en l'intégrant.
 - **Données** : PV **entièrement inventés** — raisons sociales visiblement
   fictives, montants et nombres de parts sans ressemblance avec de vrais
   clients. Un vrai PV n'entre jamais dans le dépôt. Le prompt ne reprend
@@ -157,6 +163,11 @@ plus capable mais moins lisible est une régression.
   échec : d-28 au second run, JSON invalide (virgule de trop), contenu juste.
   Réserves du README : troncature non testée, pas de jeu de réserve, jeu au
   plafond.
+- 2026-11-23 — jeu de réserve de 15 PV ajouté (4 `nominal`, 6 `difficile`,
+  5 `refus`), écrit par un sous-agent isolé ; seuil écrit avant toute
+  mesure : au moins 13/15, autres critères inchangés, sur deux runs. Notation
+  désormais contre la partie lue du PV, remarques contrôlées. Aucun run sur
+  la réserve.
 
 ## À travailler
 
@@ -178,7 +189,9 @@ Dans cet ordre :
    description de `readDocument`).
 4. ~~**Deux runs de référence**~~ (faits le 2026-11-23) : le prompt v1 tient
    le seuil, voir « Où en est-on » et le README.
-5. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
+5. **Deux runs du prompt v1 sur le jeu de réserve**, comparés à son seuil
+   (README).
+6. **L'appel unique sans outil** (PV dans le prompt), comparé à la boucle sur
    deux runs. S'il fait aussi bien, c'est lui qu'on garde. Attention : le jeu
    est au plafond (30/30, 29/30), la comparaison ne peut montrer qu'une
    dégradation ; un écart d'un cas reste dans le bruit.
@@ -196,8 +209,9 @@ Et par ailleurs :
   sortie structurée imposée par le serveur, sur deux runs. Ne pas rendre
   `readExtraction` tolérant sans nouveau run : ce serait changer la mesure.
 
-- Mettre à jour `.claude/commands/` (`prompt.md`, `outil.md`, `evaluer.md`,
-  `avant-pr.md`), qui parlent encore du jeu de synthèse.
+- Mettre à jour `.claude/commands/` (`outil.md`, `evaluer.md`,
+  `avant-pr.md`), qui parlent encore du jeu de synthèse ; `prompt.md` est à
+  jour.
 - Comparer la réflexion `off` et `low` : deux runs qui ne diffèrent que par
   `--reflexion`. Garder `low` sauf si `off` fait au moins aussi bien sur la
   réussite **et** sur `outil_interdit_appele` (qui doit rester à 0).

@@ -10,6 +10,11 @@ from agent.toolbox import DocumentStore, buildToolbox
 from tests.expected_outputs import DIVIDEND_DOCUMENTS, DIVIDEND_SET, REPO_ROOT
 
 PROMPTS = sorted((REPO_ROOT / "prompts").glob("agent_v*.md"))
+RESERVE_SET = REPO_ROOT / "evaluations" / "jeux" / "reserve_taches_dividendes.jsonl"
+RESERVE_DOCUMENTS = REPO_ROOT / "evaluations" / "jeux" / "reserve_pv_dividendes.jsonl"
+# Écrits avant que le jeu de réserve existe : une suite de mots commune avec
+# lui ne peut être qu'une coïncidence (v1 en partage six, toutes banales).
+WRITTEN_BEFORE_RESERVE = {"agent_v1.md"}
 MARKERS = ("non indiqué", "consigne ignorée")
 
 
@@ -18,10 +23,12 @@ def fourWordSequences(text: str) -> set[str]:
     return {" ".join(words[i : i + 4]) for i in range(len(words) - 3)}
 
 
-def setTexts() -> str:
-    """Le texte des PV et des tâches du jeu."""
-    documents = DocumentStore.fromFile(DIVIDEND_DOCUMENTS).documents.values()
-    with DIVIDEND_SET.open(encoding="utf-8") as handle:
+def setTexts(
+    documentsPath: Path = DIVIDEND_DOCUMENTS, tasksPath: Path = DIVIDEND_SET
+) -> str:
+    """Le texte des PV et des tâches d'un jeu."""
+    documents = DocumentStore.fromFile(documentsPath).documents.values()
+    with tasksPath.open(encoding="utf-8") as handle:
         tasks = [json.loads(line)["tache"] for line in handle if line.strip()]
     return "\n".join([*documents, *tasks])
 
@@ -38,6 +45,17 @@ def test_thereIsAPrompt() -> None:
 @pytest.mark.parametrize("path", PROMPTS, ids=lambda path: path.name)
 def test_promptSharesNoFourWordSequenceWithTheSet(path: Path) -> None:
     assert fourWordSequences(promptText(path)) & fourWordSequences(setTexts()) == set()
+
+
+@pytest.mark.parametrize(
+    "path",
+    [path for path in PROMPTS if path.name not in WRITTEN_BEFORE_RESERVE],
+    ids=lambda path: path.name,
+)
+def test_laterPromptSharesNothingWithTheReserveSet(path: Path) -> None:
+    # Le jeu de réserve ne sert jamais à écrire un prompt.
+    reserve = setTexts(RESERVE_DOCUMENTS, RESERVE_SET)
+    assert fourWordSequences(promptText(path)) & fourWordSequences(reserve) == set()
 
 
 @pytest.mark.parametrize("path", PROMPTS, ids=lambda path: path.name)

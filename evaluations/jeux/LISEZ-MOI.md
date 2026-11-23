@@ -41,6 +41,28 @@ semaine sont justes, que les incohérences déclarées sont exactement celles
 que le calcul trouve, et qu'aucune invention interdite n'est dans le PV, sauf
 celles d'une consigne cachée.
 
+## Le jeu de réserve
+
+- `reserve_pv_dividendes.jsonl` et `reserve_taches_dividendes.jsonl` :
+  15 PV inventés et leurs cas — 4 `nominal`, 6 `difficile`, 5 `refus`.
+
+Il a été écrit le 2026-11-23 par un sous-agent **isolé** : il n'a lu ni le
+prompt, ni le jeu principal, ni son générateur, et n'a reçu que la question
+du projet, le format de sortie de l'agent et les règles de données. Il n'a
+pas de générateur : ses fichiers sont contrôlés tels quels par
+`tests/test_reserve_set.py` (valeurs dans la partie lue, valeurs après la
+coupure, jours de la semaine, incohérences, valeurs interdites, échéances
+2777, noms de famille non repris du jeu principal, corrigé qui passe sa
+propre notation). La seule retouche faite à la main est l'ajout de
+l'échéance 2777 de chaque paiement aux valeurs interdites.
+
+Champs propres à ce jeu : `valeurs_apres_coupure` (valeurs écrites après le
+`MAX_DOCUMENT_CHARS`-ième caractère, que l'agent ne voit pas : attendues
+« non indiqué ») et `pourquoi` (ce que le cas mesure).
+
+**Il ne sert jamais à écrire ou retoucher un prompt.** Une session qui l'a lu
+ne doit pas écrire le prompt suivant.
+
 ## Ce qu'un jeu contient
 
 - Un magasin de documents JSONL, une ligne `{nom, contenu}` par document.
