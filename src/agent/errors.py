@@ -23,3 +23,7 @@ class ModelCallError(Exception):
 
 class DocumentStoreError(Exception):
     """Document introuvable, magasin de documents ou jeu de tâches illisible."""
+
+
+class UnreadableExtractionError(Exception):
+    """La sortie de l'agent ne suit pas le format : elle n'est pas vérifiable."""
